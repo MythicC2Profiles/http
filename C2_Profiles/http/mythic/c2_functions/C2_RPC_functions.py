@@ -24,4 +24,4 @@ async def test(request):
 #   For success: {"status": "success", "message": "your success message here" }
 #   For error: {"status": "error", "error": "your error message here" }
 async def opsec(request):
-    return {"status": "success", "message": "No OPSEC Check"}
+    return {"status": "success", "message": "No OPSEC Check Performed"}

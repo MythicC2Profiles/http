@@ -79,19 +79,19 @@ class HTTP(C2Profile):
         ),
         C2ProfileParameter(
             name="get_uri",
-            description="GET request URI",
+            description="GET request URI (don't include leading /)",
             default_value="index",
             required=False,
         ),
         C2ProfileParameter(
             name="post_uri",
-            description="POST request URI",
+            description="POST request URI (don't include leading /)",
             default_value="data",
             required=False,
         ),
         C2ProfileParameter(
             name="query_path_name",
-            description="Name of the query parameter",
+            description="Name of the query parameter for GET requests",
             default_value="q",
             required=False,
             verifier_regex="^[^\/]",

@@ -8,6 +8,7 @@ This is a Mythic C2 Profile called http. It simply provides a way to get HTTP me
 * Proxy Information
 * Support for SSL
 
+The c2 profile has `mythic_c2_container==0.0.22` PyPi package installed and reports to Mythic as version "3".
 
 ## How to install an agent in this format within Mythic
 
