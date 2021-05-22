@@ -30,6 +30,13 @@ def server_error_handler(request, exception):
 
 async def agent_message(request, **kwargs):
     global config
+    forwarded_headers = {
+        "x-forwarded-for": request.headers["x-forwarded-for"] if "x-forwarded-for" in request.headers else request.ip,
+        "x-forwarded-url": request.url,
+        "x-forwarded-query": request.query_string,
+        "x-forwarded-port": str(request.server_port),
+        "x-forwarded-cookies": str(request.cookies)
+    }
     try:
         if config[request.app.name]['debug']:
             await print_flush("agent_message request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
@@ -38,19 +45,12 @@ async def agent_message(request, **kwargs):
             await print_flush("Forwarding along to: {}".format(config['mythic_address']))
         if request.method == "POST":
             # manipulate the request if needed
-            #await MythicCallbackRPC().add_event_message(message="got a POST message")
-            async with session.post(config['mythic_address'], data=request.body,  ssl=False, headers={"Mythic": "http", **request.headers}) as resp:
+            async with session.post(config['mythic_address'], data=request.body,  ssl=False, headers={"Mythic": "http", **request.headers, **forwarded_headers}) as resp:
                 return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
-            #response = requests.post(config['mythic_address'], data=request.body, verify=False, cookies=request.cookies, headers={"Mythic": "http", **request.headers})
         else:
             # manipulate the request if needed
-            #await MythicCallbackRPC().add_event_message(message="got a GET message")
-            #msg = await MythicCallbackRPC().encrypt_bytes(with_uuid=True, data="my message".encode(), uuid="eaf10700-cb30-402d-b101-8e35d67cdb41")
-            #await MythicCallbackRPC().add_event_message(message=msg.response)
-            async with session.get(config['mythic_address'] + "?{}".format(request.query_string), data=request.body, ssl=False, headers={"Mythic": "http", **request.headers}) as resp:
+            async with session.get(config['mythic_address'] + "?{}".format(request.query_string), data=request.body, ssl=False, headers={"Mythic": "http", **request.headers, **forwarded_headers}) as resp:
                 return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
-            #response = requests.get(config['mythic_address'] + "?{}".format(request.query_string), verify=False, data=request.body, cookies=request.cookies, headers={"Mythic": "http", **request.headers})
-        #return raw(response.content, headers=config[request.app.name]['headers'], status=response.status_code)
     except Exception as e:
         if request is None:
             await print_flush("Invalid HTTP Method - Likely HTTPS trying to talk to HTTP")
