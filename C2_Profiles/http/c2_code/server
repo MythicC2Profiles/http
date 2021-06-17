@@ -102,12 +102,29 @@ if __name__ == "__main__":
                 server = app.create_server(host="0.0.0.0", port=inst['port'], ssl=context, debug=False, return_asyncio_server=True, access_log=True)
             else:
                 server = app.create_server(host="0.0.0.0", port=inst['port'], ssl=context, debug=False, return_asyncio_server=True, access_log=False)
-            if inst['debug']:
-                print("using SSL for port {}".format(inst['port']))
-                sys.stdout.flush()
+            print("++++++++++++++++++++++++++++++++++++++++++")
+            print("++++++++++++++++++++++++++++++++++++++++++")
+            print("Successfully using SSL for port {}".format(inst['port']))
+            print("++++++++++++++++++++++++++++++++++++++++++")
+            print("++++++++++++++++++++++++++++++++++++++++++")
+            sys.stdout.flush()
         else:
-            if inst['debug']:
-                print("not using SSL for port {}".format(inst['port']))
+            if inst["key_path"] != "" or inst["cert_path"] != "":
+                print("-----------------------------------------------------------------------------")
+                print("-----------------------------------------------------------------------------")
+                print("key_path or cert_path is not empty, but at least one of the files cannot be found.")
+                print("If you're using the http profile in a Docker container, place your cert and key in Mythic/C2_Profiles/http/c2_code/")
+                print("    and set the key_path and cert_path values to just the names of the files")
+                print("If you're using the http profile outside of Docker, make sure the paths are absolute and correct")
+                print("-----------------------------------------------------------------------------")
+                print("-----------------------------------------------------------------------------")
+                sys.stdout.flush()
+            else:
+                print("**************************************************************")
+                print("**************************************************************")
+                print("No Cert or Key file specified, NOT using SSL for port {}".format(inst['port']))
+                print("**************************************************************")
+                print("**************************************************************")
                 sys.stdout.flush()
             if inst['debug']:
                 server = app.create_server(host="0.0.0.0", port=inst['port'], debug=False, return_asyncio_server=True, access_log=True)
