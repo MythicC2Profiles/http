@@ -11,6 +11,7 @@ import requests
 import json
 import os
 import aiohttp
+from OpenSSL import crypto, SSL
 
 config = {}
 
@@ -45,6 +46,11 @@ async def agent_message(request, **kwargs):
             await print_flush("Forwarding along to: {}".format(config['mythic_address']))
         if request.method == "POST":
             # manipulate the request if needed
+            #from mythic_c2_container.MythicRPC import MythicRPC
+            #msg = await MythicRPC().execute("create_encrypted_message", message={"action": "get_tasking"}, target_uuid="ba3f9b0a-e073-4cbc-afe7-1c94f86cc76a", c2_profile_name="http")
+            #resp = await MythicRPC().execute("create_event_message", message=msg.response, warning=False)
+            #msg = await MythicRPC().execute("create_decrypted_message", message=msg.response, c2_profile_name="http")
+            #resp = await MythicRPC().execute("create_event_message", message=msg.response, warning=False)
             async with session.post(config['mythic_address'], data=request.body,  ssl=False, headers={"Mythic": "http", **request.headers, **forwarded_headers}) as resp:
                 return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
         else:
@@ -59,12 +65,50 @@ async def agent_message(request, **kwargs):
             await print_flush("error in agent_message: {}".format(str(e)))
         return server_error_handler(request, e)
 
+# from https://stackoverflow.com/questions/27164354/create-a-self-signed-x509-certificate-in-python
+def cert_gen(
+    emailAddress: str = "",
+    commonName: str = "",
+    countryName: str = "US",
+    localityName: str = "",
+    stateOrProvinceName: str = "",
+    organizationName: str = "",
+    organizationUnitName: str = "",
+    serialNumber: int = 0,
+    validityStartInSeconds: int = 0,
+    validityEndInSeconds: int = 10*365*24*60*60,
+    key_file: str  = "privkey.pem",
+    cert_file: str = "fullchain.pem"):
+
+    #can look at generated file using openssl:
+    #openssl x509 -inform pem -in selfsigned.crt -noout -text
+    # create a key pair
+    k = crypto.PKey()
+    k.generate_key(crypto.TYPE_RSA, 4096)
+    # create a self-signed cert
+    cert = crypto.X509()
+    cert.get_subject().C = countryName
+    cert.get_subject().ST = stateOrProvinceName
+    cert.get_subject().L = localityName
+    cert.get_subject().O = organizationName
+    cert.get_subject().OU = organizationUnitName
+    cert.get_subject().CN = commonName
+    cert.get_subject().emailAddress = emailAddress
+    cert.set_serial_number(serialNumber)
+    cert.gmtime_adj_notBefore(0)
+    cert.gmtime_adj_notAfter(validityEndInSeconds)
+    cert.set_issuer(cert.get_subject())
+    cert.set_pubkey(k)
+    cert.sign(k, 'sha512')
+    with open(cert_file, "wt") as f:
+        f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+    with open(key_file, "wt") as f:
+        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+
 
 
 if __name__ == "__main__":
     sys.path.append("/Mythic/mythic")
-    from mythic_c2_container.C2ProfileBase import *
-    from mythic_c2_container.MythicCallbackRPC import *
     config_file = open("config.json", 'rb')
     main_config = json.loads(config_file.read().decode('utf-8'))
     print("Opening config and starting instances...")
@@ -95,7 +139,10 @@ if __name__ == "__main__":
         app.error_handler.add(Exception, server_error_handler)
         keyfile = Path(inst['key_path'])
         certfile = Path(inst['cert_path'])
-        if keyfile.is_file() and certfile.is_file():
+        if (not keyfile.is_file() or not certfile.is_file()) and inst["use_ssl"]:
+            # we need to generate the certs
+            cert_gen(key_file=inst['key_path'], cert_file=inst['cert_path'])
+        if keyfile.is_file() and certfile.is_file() and inst['use_ssl']:
             context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             context.load_cert_chain(inst['cert_path'], keyfile=inst['key_path'])
             if inst['debug']:
@@ -109,20 +156,21 @@ if __name__ == "__main__":
             print("++++++++++++++++++++++++++++++++++++++++++")
             sys.stdout.flush()
         else:
-            if inst["key_path"] != "" or inst["cert_path"] != "":
+            if (inst["key_path"] != "" or inst["cert_path"] != "") and inst["use_ssl"]:
                 print("-----------------------------------------------------------------------------")
                 print("-----------------------------------------------------------------------------")
-                print("key_path or cert_path is not empty, but at least one of the files cannot be found.")
+                print("key_path or cert_path is not empty and use_ssl is true, but at least one of the files cannot be found.")
                 print("If you're using the http profile in a Docker container, place your cert and key in Mythic/C2_Profiles/http/c2_code/")
                 print("    and set the key_path and cert_path values to just the names of the files")
                 print("If you're using the http profile outside of Docker, make sure the paths are absolute and correct")
+                print("NOT using SSL for port {}".format(inst['port']))
                 print("-----------------------------------------------------------------------------")
                 print("-----------------------------------------------------------------------------")
                 sys.stdout.flush()
             else:
                 print("**************************************************************")
                 print("**************************************************************")
-                print("No Cert or Key file specified, NOT using SSL for port {}".format(inst['port']))
+                print("NOT using SSL for port {}".format(inst['port']))
                 print("**************************************************************")
                 print("**************************************************************")
                 sys.stdout.flush()

@@ -1,5 +1,5 @@
 +++
-title = "HTTP"
+title = "http"
 chapter = false
 weight = 5
 +++
@@ -39,9 +39,10 @@ The profile reads a `config.json` file for a set of instances of `Sanic` webserv
       "Content-Type": "application/javascript; charset=utf-8"
     },
     "port": 80,
-    "key_path": "",
-    "cert_path": "",
-    "debug": true
+    "key_path": "privkey.pem",
+    "cert_path": "fullchain.pem",
+    "debug": true,
+    "use_ssl": false
     }
   ]
 }
@@ -49,7 +50,7 @@ The profile reads a `config.json` file for a set of instances of `Sanic` webserv
 
 You can specify the headers that the profile will set on Server responses. If there's an error, the server will return a `404` message based on the `fake.html` file contents in `C2_Profiles/HTTP/c2_code`.
 
-If you want to use SSL within this container specifically, then you can put your key and cert in the `C2_Profiles/HTTP/c2_code` folder and update the `key_path` and `cert_path` variables to have the `names` of those files.
+If you want to use SSL within this container specifically, then you can put your key and cert in the `C2_Profiles/HTTP/c2_code` folder and update the `key_path` and `cert_path` variables to have the `names` of those files. Alternatively, if you specify `use_ssl` as true and you don't have any certs already placed on disk, then the profile will automatically generate some self-signed certs for you to use.
 You should get a notification when the server starts with information about the configuration:
 
 ```
@@ -67,11 +68,8 @@ A note about debugging:
 - It's recommended to have it on initially to help troubleshoot payload connectivity and configuration issues, but then to set it to `false` for actual operations
 
 ### Profile Options
-#### Base64 of a 32-byte AES Key
-Base64 value of the AES pre-shared key to use for communication with the agent. This will be auto-populated with a random key per payload, but you can also replace this with the base64 of any 32 bytes you want. If you don't want to use encryption here, blank out this value.
-
-#### User Agent
-This is the user-agent string the agent will use when making HTTP requests.
+#### crypto type
+Indicate if you want to use no crypto (i.e. plaintext) or if you want to use Mythic's aes256_hmac. Using no crypto is really helpful for agent development so that it's easier to see messages and get started faster, but for actual operations you should leave the default to aes256_hmac.
 
 #### Callback Host
 The URL for the redirector or Mythic server. This must include the protocol to use (e.g. `http://` or `https://`)
@@ -85,8 +83,8 @@ Percentage of jitter effect for callback interval.
 #### Callback Port
 Number to specify the port number to callback to. This is split out since you don't _have_ to connect to the normal port (i.e. you could connect to http on port 8080). 
 
-#### Host header
-Value for the `Host` header in web requests. This is used with _Domain Fronting_.
+#### Headers
+This is an array of headers you want to include in your agent for HTTP comms. By default, this includes a standard User-Agent value and an option to add in a Host header for domain fronting. You can then add in as many other custom headers as you want.
 
 #### Kill Date
 Date for the agent to automatically exit, typically the after an assessment is finished.
