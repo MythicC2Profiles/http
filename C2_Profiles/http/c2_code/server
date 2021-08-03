@@ -12,6 +12,7 @@ import json
 import os
 import aiohttp
 from OpenSSL import crypto, SSL
+import random
 
 config = {}
 
@@ -65,15 +66,22 @@ async def agent_message(request, **kwargs):
             await print_flush("error in agent_message: {}".format(str(e)))
         return server_error_handler(request, e)
 
+def random_mixed():
+    random.seed()
+    length = random.randint(5,20)
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    rnd = ''.join(random.choice(letters) for i in range(length))
+    return rnd
+
 # from https://stackoverflow.com/questions/27164354/create-a-self-signed-x509-certificate-in-python
 def cert_gen(
-    emailAddress: str = "Mythic",
-    commonName: str = "Mythic",
+    emailAddress: str = random_mixed(),
+    commonName: str = random_mixed(),
     countryName: str = "US",
-    localityName: str = "Mythic",
-    stateOrProvinceName: str = "Mythic",
-    organizationName: str = "Mythic",
-    organizationUnitName: str = "Mythic",
+    localityName: str = random_mixed(),
+    stateOrProvinceName: str = random_mixed(),
+    organizationName: str = random_mixed(),
+    organizationUnitName: str = random_mixed(),
     serialNumber: int = 0,
     validityStartInSeconds: int = 0,
     validityEndInSeconds: int = 10*365*24*60*60,
