@@ -73,7 +73,7 @@ def cert_gen(
     localityName: str = "",
     stateOrProvinceName: str = "",
     organizationName: str = "",
-    organizationUnitName: str = "",
+    organizationUnitName: str = "Mythic",
     serialNumber: int = 0,
     validityStartInSeconds: int = 0,
     validityEndInSeconds: int = 10*365*24*60*60,
