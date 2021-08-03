@@ -70,7 +70,7 @@ def cert_gen(
     emailAddress: str = "",
     commonName: str = "",
     countryName: str = "US",
-    localityName: str = "",
+    localityName: str = "Mythic",
     stateOrProvinceName: str = "Mythic",
     organizationName: str = "",
     organizationUnitName: str = "",
