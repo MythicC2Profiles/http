@@ -67,13 +67,13 @@ async def agent_message(request, **kwargs):
 
 # from https://stackoverflow.com/questions/27164354/create-a-self-signed-x509-certificate-in-python
 def cert_gen(
-    emailAddress: str = "",
-    commonName: str = "",
+    emailAddress: str = "Mythic",
+    commonName: str = "Mythic",
     countryName: str = "US",
     localityName: str = "Mythic",
     stateOrProvinceName: str = "Mythic",
-    organizationName: str = "",
-    organizationUnitName: str = "",
+    organizationName: str = "Mythic",
+    organizationUnitName: str = "Mythic",
     serialNumber: int = 0,
     validityStartInSeconds: int = 0,
     validityEndInSeconds: int = 10*365*24*60*60,
