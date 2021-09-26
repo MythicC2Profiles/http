@@ -30,6 +30,19 @@ def server_error_handler(request, exception):
     return html("Error: Requested URL {} not found".format(request.url), status=404, headers=config[request.app.name]['headers'])
 
 
+async def download_file(request, **kwargs):
+    try:
+        if config[request.app.name]['debug']:
+            await print_flush("agent_message request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
+            await print_flush(config[request.app.name]['payloads'])
+            await print_flush(request.path)
+        if config[request.app.name]['debug']:
+            await print_flush(f"forwarding to : {config['mythic_base_address'] + '/api/v1.4/files/download/{}'.format(config[request.app.name]['payloads'][request.path])}")
+        async with session.get(config['mythic_base_address'] + "/api/v1.4/files/download/{}".format(config[request.app.name]['payloads'][request.path]), ssl=False, headers={"Mythic": "http", **request.headers}) as resp:
+            return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
+    except Exception as e:
+        await print_flush(str(e))
+
 async def agent_message(request, **kwargs):
     global config
     forwarded_headers = {
@@ -124,6 +137,7 @@ if __name__ == "__main__":
     # basic mapping of the general endpoints to the real endpoints
     try:
         config['mythic_address'] = os.environ['MYTHIC_ADDRESS']
+        config['mythic_base_address'] = config['mythic_address'].split('/api')[0]
     except Exception as e:
         print("failed to find MYTHIC_ADDRESS environment variable")
         sys.stdout.flush()
@@ -131,7 +145,8 @@ if __name__ == "__main__":
     # now look at the specific instances to start
     for inst in main_config['instances']:
         config[str(inst['port'])] = {'debug': inst['debug'],
-                                     'headers': inst['ServerHeaders']}
+                                     'headers': inst['ServerHeaders'],
+                                     'payloads': {}}
         if inst['debug']:
             print("Debugging statements are enabled. This gives more context, but might be a performance hit")
         else:
@@ -142,6 +157,10 @@ if __name__ == "__main__":
         app.config['REQUEST_MAX_SIZE'] = 1000000000
         app.config['REQUEST_TIMEOUT'] = 600
         app.config['RESPONSE_TIMEOUT'] = 600
+        if "payloads" in inst and isinstance(inst["payloads"], dict):
+            for k, v in inst["payloads"].items():
+                config[str(inst["port"])]["payloads"][f"{k}"] = v
+                app.add_route(download_file, f"{k}", methods=["GET"])
         app.add_route(agent_message, "/<uri:path>", methods=['GET','POST'])
         app.add_route(agent_message, "/", methods=['GET','POST'])
         app.error_handler.add(Exception, server_error_handler)
