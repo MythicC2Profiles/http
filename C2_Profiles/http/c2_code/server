@@ -15,6 +15,7 @@ from OpenSSL import crypto, SSL
 import random
 
 config = {}
+decoy_page = ""
 
 async def print_flush(message):
     print(message)
@@ -45,6 +46,7 @@ async def download_file(request, **kwargs):
 
 async def agent_message(request, **kwargs):
     global config
+    global decoy_page
     forwarded_headers = {
         "x-forwarded-for": request.headers["x-forwarded-for"] if "x-forwarded-for" in request.headers else request.ip,
         "x-forwarded-url": request.url,
@@ -70,7 +72,10 @@ async def agent_message(request, **kwargs):
         else:
             # manipulate the request if needed
             async with session.get(config['mythic_address'] + "?{}".format(request.query_string), data=request.body, ssl=False, headers={"Mythic": "http", **request.headers, **forwarded_headers}) as resp:
-                return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
+                if resp.status == 404:
+                    return html(decoy_page, status=200)
+                else:
+                    return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
     except Exception as e:
         if request is None:
             await print_flush("Invalid HTTP Method - Likely HTTPS trying to talk to HTTP")
@@ -142,6 +147,8 @@ if __name__ == "__main__":
         print("failed to find MYTHIC_ADDRESS environment variable")
         sys.stdout.flush()
         sys.exit(1)
+    with open("./fake.html") as fp:
+        decoy_page = fp.read()
     # now look at the specific instances to start
     for inst in main_config['instances']:
         config[str(inst['port'])] = {'debug': inst['debug'],
