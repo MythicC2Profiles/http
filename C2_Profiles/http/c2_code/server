@@ -33,7 +33,7 @@ def server_error_handler(request, exception):
 async def download_file(request, **kwargs):
     try:
         if config[request.app.name]['debug']:
-            await print_flush("agent_message request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
+            await print_flush("download_file request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
             await print_flush(config[request.app.name]['payloads'])
             await print_flush(request.path)
         if config[request.app.name]['debug']:
@@ -56,6 +56,10 @@ async def agent_message(request, **kwargs):
         if config[request.app.name]['debug']:
             await print_flush("agent_message request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
             await print_flush(" and URI: {}".format(request.query_string))
+        ip_wl = config[request.app.name]['allowed_ips']
+        if len(ip_wl)>0:
+            if request.ip not in ip_wl:
+                raise ValueError(f"IP {request.ip} not whitelisted")
         if config[request.app.name]['debug']:
             await print_flush("Forwarding along to: {}".format(config['mythic_address']))
         if request.method == "POST":
@@ -145,6 +149,7 @@ if __name__ == "__main__":
     # now look at the specific instances to start
     for inst in main_config['instances']:
         config[str(inst['port'])] = {'debug': inst['debug'],
+                                     'allowed_ips': inst['allowed_ips'],
                                      'headers': inst['ServerHeaders'],
                                      'payloads': {}}
         if inst['debug']:
@@ -161,8 +166,8 @@ if __name__ == "__main__":
             for k, v in inst["payloads"].items():
                 config[str(inst["port"])]["payloads"][f"{k}"] = v
                 app.add_route(download_file, f"{k}", methods=["GET"])
-        app.add_route(agent_message, "/<uri:path>", methods=['GET','POST'])
-        app.add_route(agent_message, "/", methods=['GET','POST'])
+        app.add_route(agent_message, inst.get("get_uri","/"), methods=['GET'])
+        app.add_route(agent_message, inst.get("post_uri","/"), methods=['POST'])
         app.error_handler.add(Exception, server_error_handler)
         keyfile = Path(inst['key_path'])
         certfile = Path(inst['cert_path'])
