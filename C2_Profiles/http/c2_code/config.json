@@ -13,6 +13,9 @@
     "cert_path": "fullchain.pem",
     "debug": false,
     "use_ssl": false,
+    "allowed_ips": [],
+    "get_uri":"/<uri:path>",
+    "post_uri":"/<uri:path>",
     "payloads": {}
     }
   ]
