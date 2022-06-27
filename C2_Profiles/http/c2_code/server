@@ -13,6 +13,26 @@ import os
 import aiohttp
 from OpenSSL import crypto, SSL
 import random
+from ipaddress import ip_network,ip_address
+from mythic_c2_container.MythicCallbackRPC import MythicCallbackRPC, MythicRPCResponse
+from aio_pika.patterns import RPC
+
+async def rpc_call(function_name: str, **func_kwargs):
+    mrpc = MythicCallbackRPC()
+    await mrpc.connect()
+    rpc = await RPC.create(mrpc.channel)
+    func = getattr(rpc.proxy, function_name)
+    if func is not None and callable(func):
+        output = await func(**func_kwargs)
+    else:
+        output = await rpc.call(function_name, kwargs=dict(**func_kwargs))
+    return output
+
+async def report_error(message, request):
+    await rpc_call("create_event_message",
+        message=f"HTTP C2: {message}\n{request.url}?{request.query_string}\nFrom: {request.ip}\n{request.headers}",
+        warning=True)
+
 
 config = {}
 
@@ -22,18 +42,24 @@ async def print_flush(message):
 
 session = aiohttp.ClientSession()
 
-def server_error_handler(request, exception):
+async def server_error_handler(request, exception):
+    global config
     if request is None:
         print("Invalid HTTP Method - Likely HTTPS trying to talk to HTTP")
         sys.stdout.flush()
         return html("Error: Failed to process request", status=500, headers={})
+    else:
+        if isinstance(exception, NotFound):
+            if config[request.app.name]['verbose']:
+                await report_error(f"Path '{request.path}' is not whitelisted",request)
+
     return html("Error: Requested URL {} not found".format(request.url), status=404, headers=config[request.app.name]['headers'])
 
 
 async def download_file(request, **kwargs):
     try:
         if config[request.app.name]['debug']:
-            await print_flush("agent_message request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
+            await print_flush("download_file request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
             await print_flush(config[request.app.name]['payloads'])
             await print_flush(request.path)
         if config[request.app.name]['debug']:
@@ -56,6 +82,16 @@ async def agent_message(request, **kwargs):
         if config[request.app.name]['debug']:
             await print_flush("agent_message request from: {} with {} and {}".format(request.url, request.cookies, request.headers))
             await print_flush(" and URI: {}".format(request.query_string))
+        ip_wl = config[request.app.name]['allowed_ips']
+        if len(ip_wl)>0:
+            ip = ip_address(request.ip)
+            for net in ip_wl:
+                if ip in net:
+                    break
+            else:
+                if config[request.app.name]['verbose']:
+                    await report_error(f"IP {request.ip} not whitelisted", request)
+                raise ValueError(f"IP {request.ip} not whitelisted")
         if config[request.app.name]['debug']:
             await print_flush("Forwarding along to: {}".format(config['mythic_address']))
         if request.method == "POST":
@@ -72,9 +108,6 @@ async def agent_message(request, **kwargs):
             async with session.get(config['mythic_address'] + "?{}".format(request.query_string), data=request.body, ssl=False, headers={"Mythic": "http", **request.headers, **forwarded_headers}) as resp:
                 return raw(await resp.read(), status=resp.status, headers=config[request.app.name]['headers'])
     except Exception as e:
-        if request is None:
-            await print_flush("Invalid HTTP Method - Likely HTTPS trying to talk to HTTP")
-            return server_error_handler(request, e)
         if config[request.app.name]['debug']:
             await print_flush("error in agent_message: {}".format(str(e)))
         return server_error_handler(request, e)
@@ -145,6 +178,8 @@ if __name__ == "__main__":
     # now look at the specific instances to start
     for inst in main_config['instances']:
         config[str(inst['port'])] = {'debug': inst['debug'],
+                                     'allowed_ips': list(map(ip_network,inst['allowed_ips'])),
+                                     'verbose': inst['verbose'],
                                      'headers': inst['ServerHeaders'],
                                      'payloads': {}}
         if inst['debug']:
@@ -161,8 +196,8 @@ if __name__ == "__main__":
             for k, v in inst["payloads"].items():
                 config[str(inst["port"])]["payloads"][f"{k}"] = v
                 app.add_route(download_file, f"{k}", methods=["GET"])
-        app.add_route(agent_message, "/<uri:path>", methods=['GET','POST'])
-        app.add_route(agent_message, "/", methods=['GET','POST'])
+        app.add_route(agent_message, inst.get("get_uri","/<uri:path>"), methods=['GET'])
+        app.add_route(agent_message, inst.get("post_uri","/<uri:path>"), methods=['POST'])
         app.error_handler.add(Exception, server_error_handler)
         keyfile = Path(inst['key_path'])
         certfile = Path(inst['cert_path'])
