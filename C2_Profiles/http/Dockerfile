@@ -1,1 +1,10 @@
-FROM itsafeaturemythic/python38_sanic_c2profile:0.0.6
+FROM itsafeaturemythic/mythic_base_image:0.0.1
+WORKDIR /Mythic/
+
+COPY [".", "."]
+
+RUN go get -u github.com/MythicMeta/MythicContainer
+
+RUN make build
+
+CMD make run
