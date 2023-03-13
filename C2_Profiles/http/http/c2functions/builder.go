@@ -135,7 +135,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 	},
 	{
 		Name:          "proxy_port",
-		Description:   "Name of the query parameter for GET requests",
+		Description:   "Proxy Port",
 		DefaultValue:  "",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      false,
