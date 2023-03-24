@@ -151,7 +151,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 	{
 		Name:          "proxy_pass",
 		Description:   "Proxy Password",
-		DefaultValue:  "q",
+		DefaultValue:  "",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      false,
 	},
