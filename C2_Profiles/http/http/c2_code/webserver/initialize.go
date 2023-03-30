@@ -175,6 +175,9 @@ func getRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin
 		logging.LogDebug("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
 	}
 	return func(c *gin.Context) {
+		for header, val := range configInstance.Headers {
+			c.Header(header, val)
+		}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
@@ -184,8 +187,10 @@ func postRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gi
 		logging.LogDebug("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
 	}
 	return func(c *gin.Context) {
+		for header, val := range configInstance.Headers {
+			c.Header(header, val)
+		}
 		proxy.ServeHTTP(c.Writer, c.Request)
-
 	}
 }
 

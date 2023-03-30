@@ -17,6 +17,7 @@ type instanceConfig struct {
 	CertPath         string            `json:"cert_path"`
 	Debug            bool              `json:"debug"`
 	UseSSL           bool              `json:"use_ssl"`
+	Headers          map[string]string `json:"ServerHeaders"`
 	PayloadHostPaths map[string]string `json:"payloads"`
 }
 
