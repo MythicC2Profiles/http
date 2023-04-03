@@ -38,7 +38,7 @@ func getC2JsonConfig() (*config, error) {
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",
 	Author:           "@its_a_feature_",
-	Description:      "this is a test description",
+	Description:      "Uses HTTP Get/Post messages for connectivity",
 	IsP2p:            false,
 	IsServerRouted:   true,
 	ServerBinaryPath: filepath.Join(".", "http", "c2_code", "mythic_http_server"),
