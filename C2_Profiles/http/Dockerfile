@@ -3,8 +3,6 @@ WORKDIR /Mythic/
 
 COPY [".", "."]
 
-RUN go get -u github.com/MythicMeta/MythicContainer
-
 RUN make build
 
 CMD make run

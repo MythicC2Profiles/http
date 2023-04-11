@@ -42,6 +42,8 @@ github.com/MythicMeta/MythicContainer v0.0.0-20230304021020-d554b632a443 h1:HDV0
 github.com/MythicMeta/MythicContainer v0.0.0-20230304021020-d554b632a443/go.mod h1:rEBQYe+FYL9cSQi+M24bb0yJ+asHH7WPtSgoq5ftqDk=
 github.com/MythicMeta/MythicContainer v1.0.0-rc10 h1:6rvkom3XZshelY8l90GDmsqoAWts9+q8b8xWo+IYDGw=
 github.com/MythicMeta/MythicContainer v1.0.0-rc10/go.mod h1:rEBQYe+FYL9cSQi+M24bb0yJ+asHH7WPtSgoq5ftqDk=
+github.com/MythicMeta/MythicContainer v1.0.0-rc11 h1:oKXk176sGpwT2mHOWXmxd5iu6VcPez1CIjALhSQWSH0=
+github.com/MythicMeta/MythicContainer v1.0.0-rc11/go.mod h1:rEBQYe+FYL9cSQi+M24bb0yJ+asHH7WPtSgoq5ftqDk=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
