@@ -12,10 +12,7 @@
             "key_path": "privkey.pem",
             "cert_path": "fullchain.pem",
             "debug": false,
-            "use_ssl": false,
-            "payloads": {
-                "/bob": "09a82fc4-b021-48c5-8dab-29e5935f3e7a"
-            }
+            "use_ssl": false
         }
     ]
 }

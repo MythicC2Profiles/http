@@ -333,7 +333,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 		DefaultValue:  "https://domain.com",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      true,
-		VerifierRegex: "^(http|https):\\/\\/[a-zA-Z0-9]+",
+		VerifierRegex: "^(http|https):\\/\\/.*[^\\/]$",
 	},
 	{
 		Name:          "get_uri",
