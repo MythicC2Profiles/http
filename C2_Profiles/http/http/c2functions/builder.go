@@ -172,14 +172,14 @@ var httpc2definition = c2structs.C2Profile{
 		uaString = strings.ReplaceAll(uaString, ")", "\\)")
 		// Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 		urisString := strings.Join(uris, ".*|") + ".*"
-		c2RewriteTemplate := "RewriteRule ^.*$ \"%s%%{{REQUEST_URI}}\" [P,L]"
+		c2RewriteTemplate := "RewriteRule ^.*$ \"%s%%{REQUEST_URI}\" [P,L]"
 		c2RewriteOutput := []string{}
 		if netifaces, err := net.InterfaceAddrs(); err != nil {
 			logging.LogError(err, "Failed to get interface addresses")
-			c2RewriteOutput = []string{"RewriteRule ^.*$ \"%s%{{REQUEST_URI}}\" [P,L]"}
+			c2RewriteOutput = []string{"RewriteRule ^.*$ \"%s%{REQUEST_URI}\" [P,L]"}
 		} else if currentConfig, err := getC2JsonConfig(); err != nil {
 			logging.LogError(err, "Failed to get current json configuration")
-			c2RewriteOutput = []string{"RewriteRule ^.*$ \"%s%{{REQUEST_URI}}\" [P,L]"}
+			c2RewriteOutput = []string{"RewriteRule ^.*$ \"%s%{REQUEST_URI}\" [P,L]"}
 		} else {
 			for _, iface := range netifaces {
 				if !iface.(*net.IPNet).IP.IsLoopback() && !iface.(*net.IPNet).IP.IsPrivate() {
@@ -198,8 +198,8 @@ var httpc2definition = c2structs.C2Profile{
 				}
 			}
 			if len(c2RewriteOutput) == 0 {
-				c2RewriteOutput = []string{"c2server"}
-				output += "\tReplace 'c2server' with the http(s) address of where matching traffic should go\n"
+				c2RewriteOutput = []string{"RewriteRule ^.*$ \"C2_SERVER_HERE%{REQUEST_URI}\" [P,L]"}
+				output += "\tReplace 'C2_SERVER_HERE' with the http(s) address of where matching traffic should go\n"
 				output += "\t\tFailed to automatically determine public IP address\n"
 			}
 		}
@@ -212,12 +212,12 @@ RewriteEngine On
 ## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
 ## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
 ## Only allow GET and POST methods to pass to the C2 server
-RewriteCond %%{{REQUEST_METHOD}} ^(GET|POST) [NC]
+RewriteCond %%{REQUEST_METHOD} ^(GET|POST) [NC]
 ## Profile URIs
-RewriteCond %%{{REQUEST_URI}} ^({%s})$
+RewriteCond %%{REQUEST_URI} ^({%s})$
 ## Profile UserAgent
-RewriteCond %%{{HTTP_USER_AGENT}} "{%s}"
-{%s}
+RewriteCond %%{HTTP_USER_AGENT} "{%s}"
+%s
 ## Redirect all other traffic here
 RewriteRule ^.*$ {redirect}/? [L,R=302]
 ## .htaccess END
