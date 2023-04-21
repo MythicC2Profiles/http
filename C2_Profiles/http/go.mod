@@ -2,7 +2,7 @@ module MyContainer
 
 go 1.19
 
-require github.com/MythicMeta/MythicContainer v1.0.0-rc11
+require github.com/MythicMeta/MythicContainer v1.0.0-rc12
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
