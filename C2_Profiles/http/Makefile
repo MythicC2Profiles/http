@@ -11,9 +11,7 @@ WEBHOOK_DEFAULT_CALLBACK_CHANNEL?=
 WEBHOOK_DEFAULT_STARTUP_CHANNEL?=
 
 build:
-	go mod download 
-	go mod tidy
-	GOOS=linux go build -o ${BINARY_NAME} .
+	CGO_ENABLED=0 go build -o ${BINARY_NAME} .
 	cp ${BINARY_NAME} /
 	cd http/c2_code && make build
 
@@ -23,7 +21,7 @@ run:
 	./${BINARY_NAME}
 
 build_macos:
-	go build -o ${BINARY_NAME} .
+	CGO_ENABLED=0 go build -o ${BINARY_NAME} .
 
 run_custom:
 	DEBUG_LEVEL=${DEBUG_LEVEL} \
