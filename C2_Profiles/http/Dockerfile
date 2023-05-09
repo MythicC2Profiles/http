@@ -13,6 +13,6 @@ RUN apk add --update make
 COPY --from=0 /main /main
 COPY --from=0 /mythic_http_server /mythic_http_server
 
-WORKDIR /usr/src/app
+WORKDIR /Mythic/
 
 CMD make run
