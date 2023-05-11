@@ -186,9 +186,9 @@ RewriteEngine On
 ## Only allow GET and POST methods to pass to the C2 server
 RewriteCond %%{REQUEST_METHOD} ^(GET|POST) [NC]
 ## Profile URIs
-RewriteCond %%{REQUEST_URI} ^({%s})$
+RewriteCond %%{REQUEST_URI} ^(%s)$
 ## Profile UserAgent
-RewriteCond %%{HTTP_USER_AGENT} "{%s}"
+RewriteCond %%{HTTP_USER_AGENT} "%s"
 %s
 ## Redirect all other traffic here
 RewriteRule ^.*$ redirect/? [L,R=302]
