@@ -173,8 +173,7 @@ var httpc2definition = c2structs.C2Profile{
 		urisString := strings.Join(uris, ".*|") + ".*"
 
 		c2RewriteOutput := []string{"RewriteRule ^.*$ \"C2_SERVER_HERE%{REQUEST_URI}\" [P,L]"}
-		output += "\tReplace 'C2_SERVER_HERE' with the http(s) address of where matching traffic should go\n"
-		output += "\t\tFailed to automatically determine public IP address\n"
+		output += "#\tReplace 'C2_SERVER_HERE' with the http(s) address of where matching traffic should go\n"
 
 		htaccessTemplate := `
 ########################################
@@ -197,7 +196,7 @@ RewriteRule ^.*$ redirect/? [L,R=302]
 ########################################
 		`
 		htaccess := fmt.Sprintf(htaccessTemplate, urisString, uaString, strings.Join(c2RewriteOutput, "\n"))
-		output += "\t#Replace 'redirect' with the http(s) address of where non-matching traffic should go, ex: https://redirect.com\n"
+		output += "#\tReplace 'redirect' with the http(s) address of where non-matching traffic should go, ex: https://redirect.com\n"
 		output += "\n" + htaccess
 		response.Message = output
 		return response
