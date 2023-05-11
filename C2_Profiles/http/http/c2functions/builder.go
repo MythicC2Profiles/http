@@ -171,9 +171,25 @@ var httpc2definition = c2structs.C2Profile{
 		uaString = strings.ReplaceAll(uaString, ")", "\\)")
 		// Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 		urisString := strings.Join(uris, ".*|") + ".*"
-
-		c2RewriteOutput := []string{"RewriteRule ^.*$ \"C2_SERVER_HERE%{REQUEST_URI}\" [P,L]"}
-		output += "#\tReplace 'C2_SERVER_HERE' with the http(s) address of where matching traffic should go\n"
+		c2RewriteOutput := []string{}
+		if currentConfig, err := getC2JsonConfig(); err != nil {
+			logging.LogError(err, "Failed to get current json configuration")
+			response.Error = "Failed to get current json configuration"
+			response.Success = false
+			return response
+		} else {
+			c2RewriteTemplate := "RewriteRule ^.*$ \"%s%%{REQUEST_URI}\" [P,L]"
+			for _, instance := range currentConfig.Instances {
+				if instance.UseSSL {
+					serverURL := fmt.Sprintf("https://C2_SERVER_HERE:%d", instance.Port)
+					c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
+				} else {
+					serverURL := fmt.Sprintf("http://C2_SERVER_HERE:%d", instance.Port)
+					c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
+				}
+			}
+		}
+		output += "#\tReplace 'C2_SERVER_HERE' with the IP/Domain address of where matching traffic should go\n"
 
 		htaccessTemplate := `
 ########################################
