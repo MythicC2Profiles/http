@@ -5,7 +5,6 @@ import (
 	"fmt"
 	c2structs "github.com/MythicMeta/MythicContainer/c2_structs"
 	"github.com/MythicMeta/MythicContainer/logging"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -143,27 +142,27 @@ var httpc2definition = c2structs.C2Profile{
 			Success: true,
 			Message: fmt.Sprintf("Called redirector status check:\n%v", message),
 		}
-		output := "mod_rewrite rules generated from @AndrewChiles' project https://github.com/threatexpress/mythic2modrewrite:\n"
+		output := "#mod_rewrite rules generated from @AndrewChiles' project https://github.com/threatexpress/mythic2modrewrite:\n"
 		errors := ""
 		ua := ""
 		uris := []string{}
 		if headersInterface, ok := message.Parameters["headers"]; !ok {
-			errors += "[!] Headers c2 profile parameter not found\n"
+			errors += "#[!] Headers c2 profile parameter not found\n"
 		} else {
 			headers := headersInterface.(map[string]interface{})
 			if userAgent, ok := headers["User-Agent"]; !ok {
-				errors += "[!] User-Agent not found in headers\n"
+				errors += "#[!] User-Agent not found in headers\n"
 			} else {
 				ua = userAgent.(string)
 			}
 		}
 		if getURI, ok := message.Parameters["get_uri"]; !ok {
-			errors += "[!] No GET URI found\n"
+			errors += "#[!] No GET URI found\n"
 		} else {
 			uris = append(uris, "/"+getURI.(string))
 		}
 		if postURI, ok := message.Parameters["post_uri"]; !ok {
-			errors += "[!] No POST URI found\n"
+			errors += "#[!] No POST URI found\n"
 		} else {
 			uris = append(uris, "/"+postURI.(string))
 		}
@@ -172,37 +171,11 @@ var httpc2definition = c2structs.C2Profile{
 		uaString = strings.ReplaceAll(uaString, ")", "\\)")
 		// Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 		urisString := strings.Join(uris, ".*|") + ".*"
-		c2RewriteTemplate := "RewriteRule ^.*$ \"%s%%{REQUEST_URI}\" [P,L]"
-		c2RewriteOutput := []string{}
-		if netifaces, err := net.InterfaceAddrs(); err != nil {
-			logging.LogError(err, "Failed to get interface addresses")
-			c2RewriteOutput = []string{"RewriteRule ^.*$ \"%s%{REQUEST_URI}\" [P,L]"}
-		} else if currentConfig, err := getC2JsonConfig(); err != nil {
-			logging.LogError(err, "Failed to get current json configuration")
-			c2RewriteOutput = []string{"RewriteRule ^.*$ \"%s%{REQUEST_URI}\" [P,L]"}
-		} else {
-			for _, iface := range netifaces {
-				if !iface.(*net.IPNet).IP.IsLoopback() && !iface.(*net.IPNet).IP.IsPrivate() {
-					if iface.(*net.IPNet).IP.To4() != nil {
-						// have a non loopback, non-private ip for redirection
-						for _, instance := range currentConfig.Instances {
-							if instance.UseSSL {
-								serverURL := fmt.Sprintf("https://%s:%d", iface.(*net.IPNet).IP.String(), instance.Port)
-								c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
-							} else {
-								serverURL := fmt.Sprintf("http://%s:%d", iface.(*net.IPNet).IP.String(), instance.Port)
-								c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
-							}
-						}
-					}
-				}
-			}
-			if len(c2RewriteOutput) == 0 {
-				c2RewriteOutput = []string{"RewriteRule ^.*$ \"C2_SERVER_HERE%{REQUEST_URI}\" [P,L]"}
-				output += "\tReplace 'C2_SERVER_HERE' with the http(s) address of where matching traffic should go\n"
-				output += "\t\tFailed to automatically determine public IP address\n"
-			}
-		}
+
+		c2RewriteOutput := []string{"RewriteRule ^.*$ \"C2_SERVER_HERE%{REQUEST_URI}\" [P,L]"}
+		output += "\tReplace 'C2_SERVER_HERE' with the http(s) address of where matching traffic should go\n"
+		output += "\t\tFailed to automatically determine public IP address\n"
+
 		htaccessTemplate := `
 ########################################
 ## .htaccess START
@@ -219,12 +192,12 @@ RewriteCond %%{REQUEST_URI} ^({%s})$
 RewriteCond %%{HTTP_USER_AGENT} "{%s}"
 %s
 ## Redirect all other traffic here
-RewriteRule ^.*$ {redirect}/? [L,R=302]
+RewriteRule ^.*$ redirect/? [L,R=302]
 ## .htaccess END
 ########################################
 		`
 		htaccess := fmt.Sprintf(htaccessTemplate, urisString, uaString, strings.Join(c2RewriteOutput, "\n"))
-		output += "\tReplace 'redirect' with the http(s) address of where non-matching traffic should go, ex: https://redirect.com\n"
+		output += "\t#Replace 'redirect' with the http(s) address of where non-matching traffic should go, ex: https://redirect.com\n"
 		output += "\n" + htaccess
 		response.Message = output
 		return response
