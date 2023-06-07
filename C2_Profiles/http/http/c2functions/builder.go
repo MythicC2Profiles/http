@@ -99,9 +99,7 @@ var httpc2definition = c2structs.C2Profile{
 					}
 				}
 			}
-			message := fmt.Sprintf("Failed to find port, %d, in C2 Profile configuration\n",
-				parameterPort)
-			message += "This could indicate the use of a redirector, or a mismatch in expected connectivity.\n\n"
+			message := "Specified use of SSL and ports indicate the use of a redirector, or a mismatch in expected connectivity.\n\n"
 			message += "This means there should be the following connectivity for success:\n"
 			if strings.HasPrefix(parameterHost, "https") {
 				message += fmt.Sprintf("Agent via HTTPS on port %d to %s (should be a redirector).\n",
@@ -129,7 +127,7 @@ var httpc2definition = c2structs.C2Profile{
 				message += "\t1. Go to the C2 Profile page\n"
 				message += "\t2. Click configure for the http profile\n"
 				message += fmt.Sprintf(
-					"\t3. Change 'use_ssl' to 'true' and make sure the port is %d}\n",
+					"\t3. Change 'use_ssl' to 'true' and make sure the port is %d\n",
 					parameterPort)
 				message += "\t4. Click to stop the profile and then start it again\n"
 			}
