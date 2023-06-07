@@ -79,8 +79,8 @@ var httpc2definition = c2structs.C2Profile{
 						message += fmt.Sprintf("Agent via SSL to %s on port %d, then redirection to C2 Profile container WITHOUT SSL on port %d",
 							parameterHost, parameterPort, parameterPort)
 						response.Error = message
-						response.Success = false
-						return response
+						//response.Success = false
+						//return response
 					} else if !strings.HasPrefix(parameterHost, "https") && instance.UseSSL {
 						// callback_host of http:// on port, but port is configured with ssl
 						message := fmt.Sprintf("C2 Profile container is configured to use SSL on port %d, but the callback host for the agent is using http, %s.\n\n",
@@ -89,8 +89,8 @@ var httpc2definition = c2structs.C2Profile{
 						message += fmt.Sprintf("Agent via NO SSL to %s on port %d, then redirection to C2 Profile container WITH SSL on port %d",
 							parameterHost, parameterPort, parameterPort)
 						response.Error = message
-						response.Success = false
-						return response
+						//response.Success = false
+						//return response
 					} else {
 						// either http:// on port without ssl or https:// on port with ssl, all good
 						response.Message = fmt.Sprintf("C2 Profile container and agent configuration match port, %d, and SSL expectations (%v)\n",
