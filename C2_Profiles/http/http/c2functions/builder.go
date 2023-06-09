@@ -251,6 +251,93 @@ RewriteRule ^.*$ redirect/? [L,R=302]
 			return response
 		}
 	},
+	GetIOCFunction: func(message c2structs.C2GetIOCMessage) c2structs.C2GetIOCMessageResponse {
+		response := c2structs.C2GetIOCMessageResponse{Success: true}
+		callbackHost, err := message.GetStringArg("callback_host")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get callback_host"
+			return response
+		}
+		callbackPort, err := message.GetNumberArg("callback_port")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get callback_port"
+			return response
+		}
+		getURI, err := message.GetStringArg("get_uri")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get get_uri"
+			return response
+		}
+		postURI, err := message.GetStringArg("post_uri")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get post_uri"
+			return response
+		}
+		queryPathForGet, err := message.GetStringArg("query_path_name")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get query_path_name"
+			return response
+		}
+
+		response.IOCs = append(response.IOCs, c2structs.IOC{
+			Type: "url",
+			IOC:  fmt.Sprintf("%s:%v", callbackHost, callbackPort),
+		})
+		response.IOCs = append(response.IOCs, c2structs.IOC{
+			Type: "url",
+			IOC:  fmt.Sprintf("%s:%v/%s?%s=", callbackHost, callbackPort, getURI, queryPathForGet),
+		})
+		response.IOCs = append(response.IOCs, c2structs.IOC{
+			Type: "url",
+			IOC:  fmt.Sprintf("%s:%v/%s", callbackHost, callbackPort, postURI),
+		})
+		return response
+	},
+	SampleMessageFunction: func(message c2structs.C2SampleMessageMessage) c2structs.C2SampleMessageResponse {
+		response := c2structs.C2SampleMessageResponse{Success: true}
+		getURI, err := message.GetStringArg("get_uri")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get get_uri"
+			return response
+		}
+		postURI, err := message.GetStringArg("post_uri")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get post_uri"
+			return response
+		}
+		queryPathForGet, err := message.GetStringArg("query_path_name")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get query_path_name"
+			return response
+		}
+		headers, err := message.GetDictionaryArg("headers")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get headers"
+			return response
+		}
+		sampleAgentMessage := "MjQ1M2Q2NjQtYmZhNC00ZTI5LTgzMjEtNTgxYzQwNDBjYWM5Iv_gaPq1yVK76sNsMwCgtIOOQPWJ_fO0YBZGtyvdGIcDXnaTmlG6GLJ-ZV9NdhfNKxlM4u7JOHQeB4zJmQiNf1mqokqvhh1Vm9dYRc8O87J8oIv-H1sIENR-NDW1mirT"
+		sampleMessage := fmt.Sprintf("\n\nGET /%s?%s=%s HTTP/1.1\n", getURI, queryPathForGet, sampleAgentMessage)
+		for key, value := range headers {
+			sampleMessage += fmt.Sprintf("%s: %s\n", key, value)
+		}
+		sampleMessage += "\n\n"
+		sampleMessage += fmt.Sprintf("POST /%s HTTP/1.1\n", postURI)
+		for key, value := range headers {
+			sampleMessage += fmt.Sprintf("%s: %s\n", key, value)
+		}
+		sampleMessage += fmt.Sprintf("\n%s\n\n", sampleAgentMessage)
+		response.Message = sampleMessage
+		return response
+	},
 }
 var httpc2parameters = []c2structs.C2Parameter{
 	{
