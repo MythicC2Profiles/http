@@ -33,6 +33,13 @@ func getC2JsonConfig() (*config, error) {
 		return &currentConfig, nil
 	}
 }
+func writeC2JsonConfig(cfg *config) error {
+	jsonBytes, err := json.MarshalIndent(*cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(".", "http", "c2_code", "config.json"), jsonBytes, 644)
+}
 
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",
@@ -337,6 +344,31 @@ RewriteRule ^.*$ redirect/? [L,R=302]
 		sampleMessage += fmt.Sprintf("\n%s\n\n", sampleAgentMessage)
 		response.Message = sampleMessage
 		return response
+	},
+	HostFileFunction: func(message c2structs.C2HostFileMessage) c2structs.C2HostFileMessageResponse {
+		config, err := getC2JsonConfig()
+		if err != nil {
+			return c2structs.C2HostFileMessageResponse{
+				Success: false,
+				Error:   err.Error(),
+			}
+		}
+		for i, _ := range config.Instances {
+			if config.Instances[i].PayloadHostPaths == nil {
+				config.Instances[i].PayloadHostPaths = make(map[string]string)
+			}
+			config.Instances[i].PayloadHostPaths[message.HostURL] = message.FileUUID
+		}
+		err = writeC2JsonConfig(config)
+		if err != nil {
+			return c2structs.C2HostFileMessageResponse{
+				Success: false,
+				Error:   err.Error(),
+			}
+		}
+		return c2structs.C2HostFileMessageResponse{
+			Success: true,
+		}
 	},
 }
 var httpc2parameters = []c2structs.C2Parameter{

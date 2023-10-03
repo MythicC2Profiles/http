@@ -127,7 +127,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 	proxy := &httputil.ReverseProxy{Director: director,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout: 3 * time.Second,
+				Timeout: 30 * time.Second,
 			}).DialContext,
 			MaxIdleConns:    10,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -150,7 +150,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 			proxyForFiles := &httputil.ReverseProxy{Director: directorForFiles,
 				Transport: &http.Transport{
 					DialContext: (&net.Dialer{
-						Timeout: 3 * time.Second,
+						Timeout: 30 * time.Second,
 					}).DialContext,
 					MaxIdleConns:    10,
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
