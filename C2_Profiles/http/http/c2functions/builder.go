@@ -14,12 +14,13 @@ type config struct {
 	Instances []instanceConfig `json:"instances"`
 }
 type instanceConfig struct {
-	Port             int               `json:"port"`
-	KeyPath          string            `json:"key_path"`
-	CertPath         string            `json:"cert_path"`
-	Debug            bool              `json:"debug"`
-	UseSSL           bool              `json:"use_ssl"`
-	PayloadHostPaths map[string]string `json:"payloads"`
+	Port             int                    `json:"port"`
+	KeyPath          string                 `json:"key_path"`
+	CertPath         string                 `json:"cert_path"`
+	Debug            bool                   `json:"debug"`
+	UseSSL           bool                   `json:"use_ssl"`
+	ServerHeaders    map[string]interface{} `json:"ServerHeaders"`
+	PayloadHostPaths map[string]string      `json:"payloads"`
 }
 
 func getC2JsonConfig() (*config, error) {
