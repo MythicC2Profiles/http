@@ -60,15 +60,54 @@ func StartServer(r *gin.Engine, configInstance instanceConfig) {
 	}
 }
 
+// https://github.com/gin-gonic/gin/issues/667
+// modified to allow binding to IPv4 only
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
+}
 func backgroundRun(r *gin.Engine, address string) {
-	if err := r.Run(address); err != nil {
+	server := &http.Server{Addr: address, Handler: r}
+	listener, err := net.Listen("tcp4", address)
+	if err != nil {
+		logging.LogFatalError(err, "Failed to bind to port")
+	}
+	err = server.Serve(tcpKeepAliveListener{listener.(*net.TCPListener)})
+	if err != nil {
 		logging.LogFatalError(err, "Failed to run webserver")
 	}
+	/*
+		if err := r.Run(address); err != nil {
+			logging.LogFatalError(err, "Failed to run webserver")
+		}
+
+	*/
 }
 func backgroundRunTLS(r *gin.Engine, address string, certPath string, keyPath string) {
-	if err := r.RunTLS(address, certPath, keyPath); err != nil {
+	server := &http.Server{Addr: address, Handler: r}
+	listener, err := net.Listen("tcp4", address)
+	if err != nil {
+		logging.LogFatalError(err, "Failed to bind to port")
+	}
+	err = server.ServeTLS(tcpKeepAliveListener{listener.(*net.TCPListener)}, certPath, keyPath)
+	if err != nil {
 		logging.LogFatalError(err, "Failed to run webserver")
 	}
+	/*
+		if err := r.RunTLS(address, certPath, keyPath); err != nil {
+			logging.LogFatalError(err, "Failed to run webserver")
+		}
+
+	*/
 }
 
 func InitializeGinLogger(configInstance instanceConfig) gin.HandlerFunc {
