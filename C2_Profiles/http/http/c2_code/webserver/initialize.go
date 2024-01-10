@@ -54,60 +54,30 @@ func StartServer(r *gin.Engine, configInstance instanceConfig) {
 				logging.LogFatalError(err, "Failed to generate certs")
 			}
 		}
-		go backgroundRunTLS(r, fmt.Sprintf("%s:%d", "0.0.0.0", configInstance.Port), configInstance.CertPath, configInstance.KeyPath)
+		if configInstance.BindIP != "" {
+			go backgroundRunTLS(r, fmt.Sprintf("%s:%d", configInstance.BindIP, configInstance.Port), configInstance.CertPath, configInstance.KeyPath)
+		} else {
+			go backgroundRunTLS(r, fmt.Sprintf("%s:%d", "0.0.0.0", configInstance.Port), configInstance.CertPath, configInstance.KeyPath)
+		}
 	} else {
-		go backgroundRun(r, fmt.Sprintf("%s:%d", "0.0.0.0", configInstance.Port))
-	}
-}
-
-// https://github.com/gin-gonic/gin/issues/667
-// modified to allow binding to IPv4 only
-type tcpKeepAliveListener struct {
-	*net.TCPListener
-}
-
-func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
-	tc, err := ln.AcceptTCP()
-	if err != nil {
-		return
-	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(3 * time.Minute)
-	return tc, nil
-}
-func backgroundRun(r *gin.Engine, address string) {
-	server := &http.Server{Addr: address, Handler: r}
-	listener, err := net.Listen("tcp4", address)
-	if err != nil {
-		logging.LogFatalError(err, "Failed to bind to port")
-	}
-	err = server.Serve(tcpKeepAliveListener{listener.(*net.TCPListener)})
-	if err != nil {
-		logging.LogFatalError(err, "Failed to run webserver")
-	}
-	/*
-		if err := r.Run(address); err != nil {
-			logging.LogFatalError(err, "Failed to run webserver")
+		if configInstance.BindIP != "" {
+			go backgroundRun(r, fmt.Sprintf("%s:%d", configInstance.BindIP, configInstance.Port))
+		} else {
+			go backgroundRun(r, fmt.Sprintf("%s:%d", "0.0.0.0", configInstance.Port))
 		}
 
-	*/
+	}
+}
+
+func backgroundRun(r *gin.Engine, address string) {
+	if err := r.Run(address); err != nil {
+		logging.LogFatalError(err, "Failed to run webserver")
+	}
 }
 func backgroundRunTLS(r *gin.Engine, address string, certPath string, keyPath string) {
-	server := &http.Server{Addr: address, Handler: r}
-	listener, err := net.Listen("tcp4", address)
-	if err != nil {
-		logging.LogFatalError(err, "Failed to bind to port")
-	}
-	err = server.ServeTLS(tcpKeepAliveListener{listener.(*net.TCPListener)}, certPath, keyPath)
-	if err != nil {
+	if err := r.RunTLS(address, certPath, keyPath); err != nil {
 		logging.LogFatalError(err, "Failed to run webserver")
 	}
-	/*
-		if err := r.RunTLS(address, certPath, keyPath); err != nil {
-			logging.LogFatalError(err, "Failed to run webserver")
-		}
-
-	*/
 }
 
 func InitializeGinLogger(configInstance instanceConfig) gin.HandlerFunc {
@@ -180,13 +150,14 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 	r.POST("/", postRequest(configInstance, proxy))
 	if len(configInstance.PayloadHostPaths) > 0 {
 		for path, value := range configInstance.PayloadHostPaths {
+			localVal := value
 			directorForFiles := func(req *http.Request) {
 				req.URL.Scheme = "http"
 				req.URL.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
 				req.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
-				req.URL.Path = "/direct/download/" + value
+				req.URL.Path = fmt.Sprintf("/direct/download/%s", localVal)
 			}
-			proxyForFiles := &httputil.ReverseProxy{Director: directorForFiles,
+			proxyForFiles := httputil.ReverseProxy{Director: directorForFiles,
 				Transport: &http.Transport{
 					DialContext: (&net.Dialer{
 						Timeout: 30 * time.Second,
@@ -194,7 +165,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 					MaxIdleConns:    10,
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}}
-			r.GET(path, generateServeFile(configInstance, value, proxyForFiles))
+			r.GET(path, generateServeFile(configInstance, fmt.Sprintf("%s", localVal), &proxyForFiles))
 		}
 	}
 }

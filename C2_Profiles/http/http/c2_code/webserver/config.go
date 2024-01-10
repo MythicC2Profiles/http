@@ -19,6 +19,7 @@ type instanceConfig struct {
 	UseSSL           bool              `json:"use_ssl"`
 	Headers          map[string]string `json:"ServerHeaders"`
 	PayloadHostPaths map[string]string `json:"payloads"`
+	BindIP           string            `json:"bind_ip"`
 }
 
 var (
