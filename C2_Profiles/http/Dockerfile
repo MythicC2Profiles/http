@@ -1,1 +1,1 @@
-FROM ghcr.io/mythicc2profiles/http:v0.0.1-rc1
+FROM ghcr.io/mythicc2profiles/http:v0.0.1
