@@ -11,7 +11,6 @@ on:
     branches:
       - 'master'
       - 'main'
-      - 'docker_testing'
     tags:
       - "v*.*.*"
 
@@ -37,7 +36,7 @@ env:
   VERSION: ${{ github.ref_name }}
   #VERSION: ${{ github.event.head_commit.message }}
 
-  RELEASE_BRANCH: docker_testing
+  RELEASE_BRANCH: master
 
 jobs:
   # Builds the base container image and pushes it to the container registry
