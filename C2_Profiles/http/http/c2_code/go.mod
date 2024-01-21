@@ -9,7 +9,7 @@ require (
 	github.com/spf13/viper v1.16.0 // indirect
 )
 
-require github.com/MythicMeta/MythicContainer v1.0.9-rc08
+require github.com/MythicMeta/MythicContainer v1.3.3
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect

@@ -16,13 +16,13 @@ import (
 	"os"
 	"time"
 
+	mythicConfig "github.com/MythicMeta/MythicContainer/config"
 	"github.com/MythicMeta/MythicContainer/logging"
-	"github.com/MythicMeta/MythicContainer/utils"
 	"github.com/gin-gonic/gin"
 )
 
 func Initialize(configInstance instanceConfig) *gin.Engine {
-	if utils.MythicConfig.DebugLevel == "info" || utils.MythicConfig.DebugLevel == "warning" {
+	if mythicConfig.MythicConfig.DebugLevel == "info" || mythicConfig.MythicConfig.DebugLevel == "warning" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
@@ -128,8 +128,8 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 	// define generic get/post routes
 	director := func(req *http.Request) {
 		req.URL.Scheme = "http"
-		req.URL.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
-		req.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
+		req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
+		req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 		req.URL.Path = "/agent_message"
 		req.Header.Add("mythic", "http")
 	}
@@ -153,8 +153,8 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 			localVal := value
 			directorForFiles := func(req *http.Request) {
 				req.URL.Scheme = "http"
-				req.URL.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
-				req.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
+				req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
+				req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.URL.Path = fmt.Sprintf("/direct/download/%s", localVal)
 			}
 			proxyForFiles := httputil.ReverseProxy{Director: directorForFiles,
@@ -173,7 +173,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 func generateServeFile(configInstance instanceConfig, fileUUID string, proxyForFiles *httputil.ReverseProxy) gin.HandlerFunc {
 
 	if configInstance.Debug {
-		logging.LogInfo("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/direct/download/"+fileUUID)
+		logging.LogInfo("debug route", "host", mythicConfig.MythicConfig.MythicServerHost, "path", "/direct/download/"+fileUUID)
 	}
 	return func(c *gin.Context) {
 		proxyForFiles.ServeHTTP(c.Writer, c.Request)
@@ -182,7 +182,7 @@ func generateServeFile(configInstance instanceConfig, fileUUID string, proxyForF
 
 func getRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin.HandlerFunc {
 	if configInstance.Debug {
-		logging.LogInfo("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
+		logging.LogInfo("debug route", "host", mythicConfig.MythicConfig.MythicServerHost, "path", "/agent_message")
 	}
 	return func(c *gin.Context) {
 		for header, val := range configInstance.Headers {
@@ -194,7 +194,7 @@ func getRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin
 
 func postRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin.HandlerFunc {
 	if configInstance.Debug {
-		logging.LogInfo("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
+		logging.LogInfo("debug route", "host", mythicConfig.MythicConfig.MythicServerHost, "path", "/agent_message")
 	}
 	return func(c *gin.Context) {
 		for header, val := range configInstance.Headers {
