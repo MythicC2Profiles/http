@@ -440,7 +440,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 		DefaultValue:  "https://domain.com",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      true,
-		VerifierRegex: "^(http|https):\\/\\/.*[^\\/]$",
+		VerifierRegex: "^(http|https):\\/\\/[^\\/:]*$",
 	},
 	{
 		Name:          "get_uri",
@@ -448,6 +448,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 		DefaultValue:  "index",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      false,
+		VerifierRegex: "^[^\\/].*",
 	},
 	{
 		Name:          "post_uri",
@@ -455,6 +456,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 		DefaultValue:  "data",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      false,
+		VerifierRegex: "^[^\\/].*",
 	},
 	{
 		Name:          "query_path_name",
@@ -462,7 +464,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 		DefaultValue:  "q",
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Required:      false,
-		VerifierRegex: "^[^\\/]",
+		VerifierRegex: "^[^\\/].*",
 	},
 	{
 		Name:          "proxy_host",
