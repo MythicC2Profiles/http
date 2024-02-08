@@ -1,4 +1,4 @@
-FROM itsafeaturemythic/mythic_go_base:latest as builder
+FROM golang:1.21 as builder
 
 WORKDIR /Mythic/
 
