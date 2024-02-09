@@ -22,10 +22,13 @@ import (
 )
 
 func Initialize(configInstance instanceConfig) *gin.Engine {
-	if mythicConfig.MythicConfig.DebugLevel == "info" || mythicConfig.MythicConfig.DebugLevel == "warning" {
+	if mythicConfig.MythicConfig.DebugLevel == "warning" {
 		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
 	}
 	r := gin.New()
+	gin.DisableConsoleColor()
 	// Global middleware
 	r.Use(InitializeGinLogger(configInstance))
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
