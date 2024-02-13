@@ -48,8 +48,7 @@ func Initialize(configInstance instanceConfig) *gin.Engine {
 }
 
 func StartServer(r *gin.Engine, configInstance instanceConfig) {
-	//logging.LogInfo("Starting webserver", "host", "0.0.0.0", "port", utils.MythicConfig.ServerPort)
-	logging.LogDebug("starting server with config", "config", configInstance)
+	logging.LogInfo("Starting webserver", "config", configInstance)
 	if configInstance.UseSSL {
 		if err := checkCerts(configInstance.CertPath, configInstance.KeyPath); err != nil {
 			// certs don't exist, so generate them
