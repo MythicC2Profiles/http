@@ -178,6 +178,9 @@ func generateServeFile(configInstance instanceConfig, fileUUID string, proxyForF
 		logging.LogInfo("debug route", "host", mythicConfig.MythicConfig.MythicServerHost, "path", "/direct/download/"+fileUUID)
 	}
 	return func(c *gin.Context) {
+		if c.Request.Header.Get("X-Forwarded-For") == "" {
+			c.Request.Header.Set("X-Forwarded-For", c.ClientIP())
+		}
 		proxyForFiles.ServeHTTP(c.Writer, c.Request)
 	}
 }
@@ -190,6 +193,9 @@ func getRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin
 		for header, val := range configInstance.Headers {
 			c.Header(header, val)
 		}
+		if c.Request.Header.Get("X-Forwarded-For") == "" {
+			c.Request.Header.Set("X-Forwarded-For", c.ClientIP())
+		}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
@@ -201,6 +207,9 @@ func postRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gi
 	return func(c *gin.Context) {
 		for header, val := range configInstance.Headers {
 			c.Header(header, val)
+		}
+		if c.Request.Header.Get("X-Forwarded-For") == "" {
+			c.Request.Header.Set("X-Forwarded-For", c.ClientIP())
 		}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
