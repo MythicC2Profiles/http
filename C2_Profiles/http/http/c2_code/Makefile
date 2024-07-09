@@ -2,7 +2,7 @@
 default: build_linux ;
 
 BINARY_NAME?=mythic_http_server
-DEBUG_LEVEL?="warning"
+DEBUG_LEVEL?="debug"
 MYTHIC_SERVER_HOST?="127.0.0.1"
 MYTHIC_SERVER_PORT?="17443"
 

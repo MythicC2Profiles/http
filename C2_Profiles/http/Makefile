@@ -1,5 +1,5 @@
 BINARY_NAME?=main
-DEBUG_LEVEL?="info"
+DEBUG_LEVEL?="debug"
 RABBITMQ_HOST?="127.0.0.1"
 RABBITMQ_PASSWORD?="PqR9XJ957sfHqcxj6FsBMj4p"
 MYTHIC_SERVER_HOST?="127.0.0.1"
@@ -23,7 +23,7 @@ run:
 build_macos:
 	CGO_ENABLED=0 go build -o ${BINARY_NAME} .
 
-run_custom:
+run_custom: build_macos
 	DEBUG_LEVEL=${DEBUG_LEVEL} \
 RABBITMQ_HOST=${RABBITMQ_HOST} \
 RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD} \
