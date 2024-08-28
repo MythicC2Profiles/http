@@ -2,3 +2,6 @@ __pycache__/
 .DS_Store
 main
 .idea/
+C2_Profiles/http/http/c2_code/fullchain.pem
+
+C2_Profiles/http/http/c2_code/privkey.pem

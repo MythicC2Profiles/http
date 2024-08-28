@@ -1,6 +1,7 @@
 package c2functions
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	c2structs "github.com/MythicMeta/MythicContainer/c2_structs"
@@ -333,18 +334,30 @@ RewriteRule ^.*$ redirect/? [L,R=302]
 			response.Error = "Failed to get headers"
 			return response
 		}
-		sampleAgentMessage := "MjQ1M2Q2NjQtYmZhNC00ZTI5LTgzMjEtNTgxYzQwNDBjYWM5Iv_gaPq1yVK76sNsMwCgtIOOQPWJ_fO0YBZGtyvdGIcDXnaTmlG6GLJ-ZV9NdhfNKxlM4u7JOHQeB4zJmQiNf1mqokqvhh1Vm9dYRc8O87J8oIv-H1sIENR-NDW1mirT"
-		sampleMessage := fmt.Sprintf("\n\nGET /%s?%s=%s HTTP/1.1\n", getURI, queryPathForGet, sampleAgentMessage)
-		for key, value := range headers {
-			sampleMessage += fmt.Sprintf("%s: %s\n", key, value)
+		callbackHost, err := message.GetStringArg("callback_host")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get callback host"
+			return response
 		}
-		sampleMessage += "\n\n"
-		sampleMessage += fmt.Sprintf("POST /%s HTTP/1.1\n", postURI)
-		for key, value := range headers {
-			sampleMessage += fmt.Sprintf("%s: %s\n", key, value)
+		callbackPort, err := message.GetNumberArg("callback_port")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get callback port"
+			return response
 		}
-		sampleMessage += fmt.Sprintf("\n%s\n\n", sampleAgentMessage)
-		response.Message = sampleMessage
+		sampleRawBytes, _ := base64.URLEncoding.DecodeString("MjQ1M2Q2NjQtYmZhNC00ZTI5LTgzMjEtNTgxYzQwNDBjYWM5Iv_gaPq1yVK76sNsMwCgtIOOQPWJ_fO0YBZGtyvdGIcDXnaTmlG6GLJ-ZV9NdhfNKxlM4u7JOHQeB4zJmQiNf1mqokqvhh1Vm9dYRc8O87J8oIv-H1sIENR-NDW1mirT")
+		base64URLEncoding := base64.URLEncoding.EncodeToString(sampleRawBytes)
+		base64StdEncoding := base64.StdEncoding.EncodeToString(sampleRawBytes)
+		sampleCURLGet := "curl "
+		sampleCURLPost := fmt.Sprintf("curl -X POST -d \"%s\" ", base64StdEncoding)
+		for key, value := range headers {
+			sampleCURLGet += fmt.Sprintf("-H \"%s: %s\" ", key, value)
+			sampleCURLPost += fmt.Sprintf("-H \"%s: %s\" ", key, value)
+		}
+		sampleCURLGet += fmt.Sprintf("%s:%d/%s?%s=%s", callbackHost, int(callbackPort), getURI, queryPathForGet, base64URLEncoding)
+		sampleCURLPost += fmt.Sprintf("%s:%d/%s", callbackHost, int(callbackPort), postURI)
+		response.Message = fmt.Sprintf("GET:\n%s\n\nPOST:\n%s\n\n", sampleCURLGet, sampleCURLPost)
 		return response
 	},
 	HostFileFunction: func(message c2structs.C2HostFileMessage) c2structs.C2HostFileMessageResponse {

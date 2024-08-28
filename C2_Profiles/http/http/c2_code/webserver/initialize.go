@@ -22,11 +22,11 @@ import (
 )
 
 func Initialize(configInstance instanceConfig) *gin.Engine {
-	if mythicConfig.MythicConfig.DebugLevel == "warning" {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		gin.SetMode(gin.DebugMode)
-	}
+	//if mythicConfig.MythicConfig.DebugLevel == "warning" {
+	//	gin.SetMode(gin.ReleaseMode)
+	//} else {
+	gin.SetMode(gin.DebugMode)
+	//}
 	r := gin.New()
 	gin.DisableConsoleColor()
 	// Global middleware
