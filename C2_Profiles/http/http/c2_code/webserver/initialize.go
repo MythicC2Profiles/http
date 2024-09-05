@@ -158,6 +158,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 				req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.URL.Path = fmt.Sprintf("/direct/download/%s", localVal)
+				req.Header.Add("mythic", "http")
 			}
 			proxyForFiles := httputil.ReverseProxy{Director: directorForFiles,
 				Transport: &http.Transport{
