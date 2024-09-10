@@ -25,7 +25,7 @@ Legend:
 - Dotted line is a message within that connection
 
 ## Configuration Options
-The profile reads a `config.json` file for a set of instances of `Sanic` webservers to stand up (`80` by default) and redirects the content.
+The profile reads a `config.json` file for a set of instances of `gin` webservers to stand up (`80` by default) and redirects the content.
 
 ```JSON
 {
@@ -42,15 +42,20 @@ The profile reads a `config.json` file for a set of instances of `Sanic` webserv
     "key_path": "privkey.pem",
     "cert_path": "fullchain.pem",
     "debug": true,
-    "use_ssl": false
+    "use_ssl": false,
+    "error_file_path": "",
+    "error_status_code": 404,
+    "payloads": {}
     }
   ]
 }
 ```
 
-You can specify the headers that the profile will set on Server responses. If there's an error, the server will return a `404` message based on the `fake.html` file contents in `C2_Profiles/HTTP/c2_code`.
+You can specify the headers that the profile will set on Server responses. 
+If there's an error, the server will return a `error_status_code` message based on the `error_file_path` file contents in `C2_Profiles/HTTP/c2_code`.
 
-If you want to use SSL within this container specifically, then you can put your key and cert in the `C2_Profiles/HTTP/c2_code` folder and update the `key_path` and `cert_path` variables to have the `names` of those files. Alternatively, if you specify `use_ssl` as true and you don't have any certs already placed on disk, then the profile will automatically generate some self-signed certs for you to use.
+If you want to use SSL within this container specifically, then you can put your key and cert in the `C2_Profiles/HTTP/c2_code` folder and update the `key_path` and `cert_path` variables to have the `names` of those files. 
+Alternatively, if you specify `use_ssl` as true and you don't have any certs already placed on disk, then the profile will automatically generate some self-signed certs for you to use.
 You should get a notification when the server starts with information about the configuration:
 
 ```
@@ -115,5 +120,3 @@ If you need to manually specify a proxy endpoint, this is where you specify the 
 This profile doesn't do any randomization of network components outside of allowing operators to specify internals/jitter. Every GET request for tasking will be the same. This is important to take into consideration for profiling/beaconing analytics. 
 
 ## Development
-
-All of the code for the server is Python3 using `Sanic` and located in `C2_Profiles/HTTP/c2_code/server`. It loops through the `instances` in the `config.json` file and stands up those individual web servers.

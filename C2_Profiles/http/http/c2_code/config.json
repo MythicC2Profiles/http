@@ -1,20 +1,21 @@
 {
-  "instances": [
-    {
-      "port": 80,
-      "key_path": "privkey.pem",
-      "cert_path": "fullchain.pem",
-      "debug": false,
-      "use_ssl": false,
-      "ServerHeaders": {
-        "Cache-Control": "max-age=0, no-cache",
-        "Connection": "keep-alive",
-        "Content-Type": "application/javascript; charset=utf-8",
-        "Pragma": "no-cache",
-        "Server": "NetDNA-cache/2.2"
-      },
-      "payloads": {
-      }
-    }
-  ]
+    "instances": [
+        {
+            "port": 80,
+            "key_path": "privkey.pem",
+            "cert_path": "fullchain.pem",
+            "debug": true,
+            "use_ssl": false,
+            "ServerHeaders": {
+                "Cache-Control": "max-age=0, no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "application/javascript; charset=utf-8",
+                "Pragma": "no-cache",
+                "Server": "NetDNA-cache/2.2"
+            },
+            "error_file_path": "",
+            "error_status_code": 404,
+            "payloads": {}
+        }
+    ]
 }

@@ -20,6 +20,8 @@ type instanceConfig struct {
 	Headers          map[string]string `json:"ServerHeaders"`
 	PayloadHostPaths map[string]string `json:"payloads"`
 	BindIP           string            `json:"bind_ip"`
+	ErrorFilePath    string            `json:"error_file_path"`
+	ErrorStatusCode  int               `json:"error_status_code"`
 }
 
 var (

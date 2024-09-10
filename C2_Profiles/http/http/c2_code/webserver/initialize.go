@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"math/big"
 	"net"
 	"net/http"
@@ -25,16 +26,17 @@ func Initialize(configInstance instanceConfig) *gin.Engine {
 	//if mythicConfig.MythicConfig.DebugLevel == "warning" {
 	//	gin.SetMode(gin.ReleaseMode)
 	//} else {
+	gin.DisableConsoleColor()
 	gin.SetMode(gin.DebugMode)
 	//}
 	r := gin.New()
-	gin.DisableConsoleColor()
+
 	// Global middleware
 	r.Use(InitializeGinLogger(configInstance))
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		if err, ok := recovered.(string); ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("error: %s", err)})
+			logging.LogError(nil, err)
 		}
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}))
@@ -135,7 +137,35 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 		req.URL.Path = "/agent_message"
 		req.Header.Add("mythic", "http")
 	}
-	proxy := &httputil.ReverseProxy{Director: director,
+	modifyResponse := func(resp *http.Response) error {
+		//logging.LogInfo("hitting modify response", "responseCode", resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			if configInstance.ErrorFilePath != "" {
+				statusCode := 200
+				if configInstance.ErrorStatusCode > 0 {
+					statusCode = configInstance.ErrorStatusCode
+				}
+				file, err := os.Open(configInstance.ErrorFilePath)
+				if err != nil {
+					logging.LogError(err, "failed to get error_file_path")
+					return err
+				}
+				fileStat, err := file.Stat()
+				if err != nil {
+					logging.LogError(err, "failed to stat error_file_path")
+					return err
+				}
+				resp.Body = io.NopCloser(file)
+				resp.Header["Content-Length"] = []string{fmt.Sprint(fileStat.Size())}
+				resp.StatusCode = statusCode
+				return nil
+			}
+		}
+		return nil
+	}
+	proxy := &httputil.ReverseProxy{
+		Director:       director,
+		ModifyResponse: modifyResponse,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
 				Timeout: 30 * time.Second,
@@ -160,7 +190,9 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 				req.URL.Path = fmt.Sprintf("/direct/download/%s", localVal)
 				req.Header.Add("mythic", "http")
 			}
-			proxyForFiles := httputil.ReverseProxy{Director: directorForFiles,
+			proxyForFiles := httputil.ReverseProxy{
+				Director:       directorForFiles,
+				ModifyResponse: modifyResponse,
 				Transport: &http.Transport{
 					DialContext: (&net.Dialer{
 						Timeout: 30 * time.Second,
