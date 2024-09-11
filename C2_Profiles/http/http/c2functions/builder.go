@@ -207,19 +207,25 @@ RewriteEngine On
 ## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
 ## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
 ## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
-## Only allow GET and POST methods to pass to the C2 server
-RewriteCond %%{REQUEST_METHOD} ^(GET|POST) [NC]
-## Profile URIs
-RewriteCond %%{REQUEST_URI} ^(%s)$
-## Profile UserAgent
-RewriteCond %%{HTTP_USER_AGENT} "%s"
 %s
 ## Redirect all other traffic here
 RewriteRule ^.*$ redirect/? [L,R=302]
 ## .htaccess END
 ########################################
 		`
-		htaccess := fmt.Sprintf(htaccessTemplate, urisString, uaString, strings.Join(c2RewriteOutput, "\n"))
+		htaccessConditionTemplate := `
+## Only allow GET and POST methods to pass to the C2 server
+RewriteCond %%{REQUEST_METHOD} ^(GET|POST) [NC]
+## Profile URIs
+RewriteCond %%{REQUEST_URI} ^(%s)$
+## Profile UserAgent
+RewriteCond %%{HTTP_USER_AGENT} "%s"`
+		htaccessConditions := fmt.Sprintf(htaccessConditionTemplate, urisString, uaString)
+		allHtaccessConditions := ""
+		for _, c2Entry := range c2RewriteOutput {
+			allHtaccessConditions += htaccessConditions + "\n" + c2Entry + "\n"
+		}
+		htaccess := fmt.Sprintf(htaccessTemplate, allHtaccessConditions)
 		output += "#\tReplace 'redirect' with the http(s) address of where non-matching traffic should go, ex: https://redirect.com\n"
 		output += "\n" + htaccess
 		response.Message = output
