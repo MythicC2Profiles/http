@@ -20,10 +20,10 @@ run:
 	cd http/c2_code && make run
 	./${BINARY_NAME}
 
-build_macos:
+local:
 	CGO_ENABLED=0 go build -o ${BINARY_NAME} .
 
-run_custom: build_macos
+run_custom: local
 	DEBUG_LEVEL=${DEBUG_LEVEL} \
 RABBITMQ_HOST=${RABBITMQ_HOST} \
 RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD} \

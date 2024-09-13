@@ -19,7 +19,7 @@ run:
 build_macos:
 	CGO_ENABLED=0 go build -o ${BINARY_NAME} .
 
-run_custom:
+run_custom: build_local
 	DEBUG_LEVEL=${DEBUG_LEVEL} \
 MYTHIC_SERVER_HOST=${MYTHIC_SERVER_HOST} \
 MYTHIC_SERVER_PORT=${MYTHIC_SERVER_PORT} \

@@ -131,11 +131,13 @@ func InitializeGinLogger(configInstance instanceConfig) gin.HandlerFunc {
 func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 	// define generic get/post routes
 	director := func(req *http.Request) {
+		req.Header.Add("mythic", "http")
+		req.Header.Add("X-forwarded-user-agent", req.Header.Get("User-Agent"))
+		req.Header.Add("x-forwarded-url", req.URL.RequestURI())
 		req.URL.Scheme = "http"
 		req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 		req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 		req.URL.Path = "/agent_message"
-		req.Header.Add("mythic", "http")
 	}
 	modifyResponse := func(resp *http.Response) error {
 		//logging.LogInfo("hitting modify response", "responseCode", resp.StatusCode)
@@ -184,11 +186,13 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 		for path, value := range configInstance.PayloadHostPaths {
 			localVal := value
 			directorForFiles := func(req *http.Request) {
+				req.Header.Add("mythic", "http")
+				req.Header.Add("X-forwarded-user-agent", req.Header.Get("User-Agent"))
+				req.Header.Add("x-forwarded-url", req.URL.RequestURI())
 				req.URL.Scheme = "http"
 				req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.URL.Path = fmt.Sprintf("/direct/download/%s", localVal)
-				req.Header.Add("mythic", "http")
 			}
 			proxyForFiles := httputil.ReverseProxy{
 				Director:       directorForFiles,
