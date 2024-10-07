@@ -134,6 +134,8 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 		req.Header.Add("mythic", "http")
 		req.Header.Add("X-forwarded-user-agent", req.Header.Get("User-Agent"))
 		req.Header.Add("x-forwarded-url", req.URL.RequestURI())
+		req.Header.Add("x-forwarded-for", req.RemoteAddr)
+		req.Header.Add("x-forwarded-host", req.Host)
 		req.URL.Scheme = "http"
 		req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 		req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
@@ -189,6 +191,8 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 				req.Header.Add("mythic", "http")
 				req.Header.Add("X-forwarded-user-agent", req.Header.Get("User-Agent"))
 				req.Header.Add("x-forwarded-url", req.URL.RequestURI())
+				req.Header.Add("x-forwarded-for", req.RemoteAddr)
+				req.Header.Add("x-forwarded-host", req.Host)
 				req.URL.Scheme = "http"
 				req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
