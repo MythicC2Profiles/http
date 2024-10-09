@@ -22,6 +22,8 @@ type instanceConfig struct {
 	UseSSL           bool                   `json:"use_ssl"`
 	BindIP           string                 `json:"bind_ip"`
 	ServerHeaders    map[string]interface{} `json:"ServerHeaders"`
+	ErrorFilePath    string                 `json:"error_file_path"`
+	ErrorStatusCode  int                    `json:"error_status_code"`
 	PayloadHostPaths map[string]string      `json:"payloads"`
 }
 
@@ -33,6 +35,11 @@ func getC2JsonConfig() (*config, error) {
 		logging.LogError(err, "Failed to unmarshal config bytes")
 		return nil, err
 	} else {
+		for i, _ := range currentConfig.Instances {
+			if currentConfig.Instances[i].ErrorStatusCode == 0 {
+				currentConfig.Instances[i].ErrorStatusCode = 404
+			}
+		}
 		return &currentConfig, nil
 	}
 }
@@ -378,7 +385,20 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			if config.Instances[i].PayloadHostPaths == nil {
 				config.Instances[i].PayloadHostPaths = make(map[string]string)
 			}
-			config.Instances[i].PayloadHostPaths[message.HostURL] = message.FileUUID
+			if message.Remove {
+				if message.HostURL != "" {
+					delete(config.Instances[i].PayloadHostPaths, message.HostURL)
+				} else {
+					for j, _ := range config.Instances[i].PayloadHostPaths {
+						if config.Instances[i].PayloadHostPaths[j] == message.FileUUID {
+							delete(config.Instances[i].PayloadHostPaths, j)
+						}
+					}
+				}
+			} else {
+				config.Instances[i].PayloadHostPaths[message.HostURL] = message.FileUUID
+			}
+
 		}
 		err = writeC2JsonConfig(config)
 		if err != nil {
@@ -388,7 +408,8 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			}
 		}
 		return c2structs.C2HostFileMessageResponse{
-			Success: true,
+			Success:               true,
+			RestartInternalServer: true,
 		}
 	},
 }
