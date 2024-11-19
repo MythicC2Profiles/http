@@ -386,13 +386,9 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 				config.Instances[i].PayloadHostPaths = make(map[string]string)
 			}
 			if message.Remove {
-				if message.HostURL != "" {
-					delete(config.Instances[i].PayloadHostPaths, message.HostURL)
-				} else {
-					for j, _ := range config.Instances[i].PayloadHostPaths {
-						if config.Instances[i].PayloadHostPaths[j] == message.FileUUID {
-							delete(config.Instances[i].PayloadHostPaths, j)
-						}
+				for j, _ := range config.Instances[i].PayloadHostPaths {
+					if config.Instances[i].PayloadHostPaths[j] == message.FileUUID {
+						delete(config.Instances[i].PayloadHostPaths, j)
 					}
 				}
 			} else {
