@@ -6,7 +6,7 @@ toolchain go1.23.3
 
 //replace github.com/MythicMeta/MythicContainer => ../../../../MythicMeta/MythicContainer
 
-require github.com/MythicMeta/MythicContainer v1.4.17
+require github.com/MythicMeta/MythicContainer v1.4.19
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
