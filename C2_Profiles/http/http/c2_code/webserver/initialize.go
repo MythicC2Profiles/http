@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"slices"
 	"time"
 
 	mythicConfig "github.com/MythicMeta/MythicContainer/config"
@@ -184,6 +185,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 	r.POST("/:val", postRequest(configInstance, proxy))
 	r.GET("/", getRequest(configInstance, proxy))
 	r.POST("/", postRequest(configInstance, proxy))
+	existingPaths := []string{"/", ""}
 	if len(configInstance.PayloadHostPaths) > 0 {
 		for path, value := range configInstance.PayloadHostPaths {
 			localVal := value
@@ -208,6 +210,11 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 					MaxIdleConns:    10,
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}}
+			if slices.Contains(existingPaths, path) {
+				logging.LogError(nil, "Trying to host on path twice", "path", path, "file", localVal)
+				continue
+			}
+			existingPaths = append(existingPaths, path)
 			r.GET(path, generateServeFile(configInstance, fmt.Sprintf("%s", localVal), &proxyForFiles))
 		}
 	}

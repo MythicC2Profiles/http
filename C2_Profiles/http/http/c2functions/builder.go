@@ -51,10 +51,12 @@ func writeC2JsonConfig(cfg *config) error {
 	return os.WriteFile(filepath.Join(".", "http", "c2_code", "config.json"), jsonBytes, 644)
 }
 
+const version = "1.0.0"
+
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",
 	Author:           "@its_a_feature_",
-	Description:      "Uses HTTP Get/Post messages for connectivity",
+	Description:      fmt.Sprintf("Uses HTTP Get/Post messages for connectivity.\nVersion: %s", version),
 	IsP2p:            false,
 	IsServerRouted:   true,
 	ServerBinaryPath: filepath.Join(".", "http", "c2_code", "mythic_http_server"),
@@ -359,7 +361,11 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			response.Error = "Failed to get callback port"
 			return response
 		}
-		sampleRawBytes, _ := base64.URLEncoding.DecodeString("MjQ1M2Q2NjQtYmZhNC00ZTI5LTgzMjEtNTgxYzQwNDBjYWM5Iv_gaPq1yVK76sNsMwCgtIOOQPWJ_fO0YBZGtyvdGIcDXnaTmlG6GLJ-ZV9NdhfNKxlM4u7JOHQeB4zJmQiNf1mqokqvhh1Vm9dYRc8O87J8oIv-H1sIENR-NDW1mirT")
+		sampleRawBytesGeneric, _ := base64.URLEncoding.DecodeString("MjQ1M2Q2NjQtYmZhNC00ZTI5LTgzMjEtNTgxYzQwNDBjYWM5Iv_gaPq1yVK76sNsMwCgtIOOQPWJ_fO0YBZGtyvdGIcDXnaTmlG6GLJ-ZV9NdhfNKxlM4u7JOHQeB4zJmQiNf1mqokqvhh1Vm9dYRc8O87J8oIv-H1sIENR-NDW1mirT")
+		sampleRawBytes := make([]byte, len(sampleRawBytesGeneric))
+		sourceUUID := "00000000-0000-0000-0000-000000000000"
+		copy(sampleRawBytes, sourceUUID)
+		copy(sampleRawBytes[len(sourceUUID):], sampleRawBytesGeneric[len(sourceUUID):])
 		base64URLEncoding := base64.URLEncoding.EncodeToString(sampleRawBytes)
 		base64StdEncoding := base64.StdEncoding.EncodeToString(sampleRawBytes)
 		sampleCURLGet := "curl "
