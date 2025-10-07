@@ -550,6 +550,12 @@ var httpc2parameters = []c2structs.C2Parameter{
 }
 
 func Initialize() {
+	agentBytes, err := os.ReadFile(filepath.Join(".", "http.svg"))
+	if err != nil {
+		logging.LogError(err, "failed to get http svg icon")
+	} else {
+		httpc2definition.AgentIcon = &agentBytes
+	}
 	c2structs.AllC2Data.Get("http").AddC2Definition(httpc2definition)
 	c2structs.AllC2Data.Get("http").AddParameters(httpc2parameters)
 }
