@@ -51,14 +51,15 @@ func writeC2JsonConfig(cfg *config) error {
 	return os.WriteFile(filepath.Join(".", "http", "c2_code", "config.json"), jsonBytes, 644)
 }
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",
 	Author:           "@its_a_feature_",
-	Description:      fmt.Sprintf("Uses HTTP Get/Post messages for connectivity.\nVersion: %s", version),
+	Description:      fmt.Sprintf("Uses HTTP Get/Post messages for connectivity"),
 	IsP2p:            false,
 	IsServerRouted:   true,
+	SemVer:           version,
 	ServerBinaryPath: filepath.Join(".", "http", "c2_code", "mythic_http_server"),
 	ConfigCheckFunction: func(message c2structs.C2ConfigCheckMessage) c2structs.C2ConfigCheckMessageResponse {
 		response := c2structs.C2ConfigCheckMessageResponse{
