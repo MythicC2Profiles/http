@@ -4,11 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	c2structs "github.com/MythicMeta/MythicContainer/c2_structs"
-	"github.com/MythicMeta/MythicContainer/logging"
 	"os"
 	"path/filepath"
 	"strings"
+
+	c2structs "github.com/MythicMeta/MythicContainer/c2_structs"
+	"github.com/MythicMeta/MythicContainer/logging"
 )
 
 type config struct {
@@ -51,7 +52,7 @@ func writeC2JsonConfig(cfg *config) error {
 	return os.WriteFile(filepath.Join(".", "http", "c2_code", "config.json"), jsonBytes, 644)
 }
 
-const version = "1.1.0"
+const version = "1.1.1"
 
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",
@@ -66,94 +67,98 @@ var httpc2definition = c2structs.C2Profile{
 			Success: true,
 			Message: fmt.Sprintf("Called config check\n%v", message),
 		}
-		if suppliedPort, ok := message.Parameters["callback_port"]; !ok {
+		suppliedPort, ok := message.Parameters["callback_port"]
+		if !ok {
 			response.Success = false
 			response.Error = "Failed to get callback_port attribute"
 			return response
-		} else if suppliedHost, ok := message.Parameters["callback_host"]; !ok {
+		}
+		suppliedHost, ok := message.Parameters["callback_host"]
+		if !ok {
 			response.Success = false
 			response.Error = "Failed to get callback_host attribute"
 			return response
-		} else if currentConfig, err := getC2JsonConfig(); err != nil {
+		}
+		currentConfig, err := getC2JsonConfig()
+		if err != nil {
 			response.Success = false
 			response.Error = err.Error()
 			return response
-		} else {
-			possibleSSLPorts := []int{}
-			possiblePorts := []int{}
-			parameterPort := int(suppliedPort.(float64))
-			parameterHost := suppliedHost.(string)
-			for _, instance := range currentConfig.Instances {
-				if instance.UseSSL {
-					possibleSSLPorts = append(possibleSSLPorts, instance.Port)
-				} else {
-					possiblePorts = append(possiblePorts, instance.Port)
-				}
-				if instance.Port == parameterPort {
-					// we found a match for our port and a configured port
-					if strings.HasPrefix(parameterHost, "https") && !instance.UseSSL {
-						// callback_host of https:// on port, but port isn't configured with ssl
-						message := fmt.Sprintf("C2 Profile container is configured to NOT use SSL on port %d, but the callback host for the agent is using https, %s.\n\n",
-							instance.Port, parameterHost)
-						message += "This means there should be the following connectivity for success:\n"
-						message += fmt.Sprintf("Agent via SSL to %s on port %d, then redirection to C2 Profile container WITHOUT SSL on port %d",
-							parameterHost, parameterPort, parameterPort)
-						response.Error = message
-						//response.Success = false
-						//return response
-					} else if !strings.HasPrefix(parameterHost, "https") && instance.UseSSL {
-						// callback_host of http:// on port, but port is configured with ssl
-						message := fmt.Sprintf("C2 Profile container is configured to use SSL on port %d, but the callback host for the agent is using http, %s.\n\n",
-							instance.Port, parameterHost)
-						message += "This means there should be the following connectivity for success:\n"
-						message += fmt.Sprintf("Agent via NO SSL to %s on port %d, then redirection to C2 Profile container WITH SSL on port %d",
-							parameterHost, parameterPort, parameterPort)
-						response.Error = message
-						//response.Success = false
-						//return response
-					} else {
-						// either http:// on port without ssl or https:// on port with ssl, all good
-						response.Message = fmt.Sprintf("C2 Profile container and agent configuration match port, %d, and SSL expectations (%v)\n",
-							instance.Port, instance.UseSSL)
-						return response
-					}
-				}
-			}
-			message := "Specified use of SSL and ports indicate the use of a redirector, or a mismatch in expected connectivity.\n\n"
-			message += "This means there should be the following connectivity for success:\n"
-			if strings.HasPrefix(parameterHost, "https") {
-				message += fmt.Sprintf("Agent via HTTPS on port %d to %s (should be a redirector).\n",
-					parameterPort, parameterHost)
-			} else {
-				message += fmt.Sprintf("Agent via HTTP on port %d to %s (should be a redirector).\n",
-					parameterPort, parameterHost)
-			}
-			if len(possibleSSLPorts) > 0 {
-				message += fmt.Sprintf("Redirector then forwards request to C2 Profile container WITH SSL on one of the following ports: %v\n",
-					possibleSSLPorts)
-			}
-			if len(possiblePorts) > 0 {
-				if len(possibleSSLPorts) > 0 {
-					message += fmt.Sprintf("Alternatively, redirector could forward request to C2 Profile container WITHOUT SSL on one of the following ports: %v\n",
-						possiblePorts)
-				} else {
-					message += fmt.Sprintf("Redirector then forwards request to C2 Profile container WITHOUT SSL on one of the following ports: %v\n",
-						possiblePorts)
-				}
-			}
-			if strings.HasPrefix(parameterHost, "https") {
-				message += "\nAlternatively, this might mean that you want to do SSL but are not using SSL within your C2 Profile container.\n"
-				message += "To add SSL to your C2 profile:\n"
-				message += "\t1. Go to the C2 Profile page\n"
-				message += "\t2. Click configure for the http profile\n"
-				message += fmt.Sprintf(
-					"\t3. Change 'use_ssl' to 'true' and make sure the port is %d\n",
-					parameterPort)
-				message += "\t4. Click to stop the profile and then start it again\n"
-			}
-			response.Message = message
-			return response
 		}
+		possibleSSLPorts := []int{}
+		possiblePorts := []int{}
+		parameterPort := int(suppliedPort.(float64))
+		parameterHost := suppliedHost.(string)
+		for _, instance := range currentConfig.Instances {
+			if instance.UseSSL {
+				possibleSSLPorts = append(possibleSSLPorts, instance.Port)
+			} else {
+				possiblePorts = append(possiblePorts, instance.Port)
+			}
+			if instance.Port == parameterPort {
+				// we found a match for our port and a configured port
+				if strings.HasPrefix(parameterHost, "https") && !instance.UseSSL {
+					// callback_host of https:// on port, but port isn't configured with ssl
+					message := fmt.Sprintf("C2 Profile container is configured to NOT use SSL on port %d, but the callback host for the agent is using https, %s.\n\n",
+						instance.Port, parameterHost)
+					message += "This means there should be the following connectivity for success:\n"
+					message += fmt.Sprintf("Agent via SSL to %s on port %d, then redirection to C2 Profile container WITHOUT SSL on port %d",
+						parameterHost, parameterPort, parameterPort)
+					response.Error = message
+					//response.Success = false
+					//return response
+				} else if !strings.HasPrefix(parameterHost, "https") && instance.UseSSL {
+					// callback_host of http:// on port, but port is configured with ssl
+					message := fmt.Sprintf("C2 Profile container is configured to use SSL on port %d, but the callback host for the agent is using http, %s.\n\n",
+						instance.Port, parameterHost)
+					message += "This means there should be the following connectivity for success:\n"
+					message += fmt.Sprintf("Agent via NO SSL to %s on port %d, then redirection to C2 Profile container WITH SSL on port %d",
+						parameterHost, parameterPort, parameterPort)
+					response.Error = message
+					//response.Success = false
+					//return response
+				} else {
+					// either http:// on port without ssl or https:// on port with ssl, all good
+					response.Message = fmt.Sprintf("C2 Profile container and agent configuration match port, %d, and SSL expectations (%v)\n",
+						instance.Port, instance.UseSSL)
+					return response
+				}
+			}
+		}
+		messageOutput := "Specified use of SSL and ports indicate the use of a redirector, or a mismatch in expected connectivity.\n\n"
+		messageOutput += "This means there should be the following connectivity for success:\n"
+		if strings.HasPrefix(parameterHost, "https") {
+			messageOutput += fmt.Sprintf("Agent via HTTPS on port %d to %s (should be a redirector).\n",
+				parameterPort, parameterHost)
+		} else {
+			messageOutput += fmt.Sprintf("Agent via HTTP on port %d to %s (should be a redirector).\n",
+				parameterPort, parameterHost)
+		}
+		if len(possibleSSLPorts) > 0 {
+			messageOutput += fmt.Sprintf("Redirector then forwards request to C2 Profile container WITH SSL on one of the following ports: %v\n",
+				possibleSSLPorts)
+		}
+		if len(possiblePorts) > 0 {
+			if len(possibleSSLPorts) > 0 {
+				messageOutput += fmt.Sprintf("Alternatively, redirector could forward request to C2 Profile container WITHOUT SSL on one of the following ports: %v\n",
+					possiblePorts)
+			} else {
+				messageOutput += fmt.Sprintf("Redirector then forwards request to C2 Profile container WITHOUT SSL on one of the following ports: %v\n",
+					possiblePorts)
+			}
+		}
+		if strings.HasPrefix(parameterHost, "https") {
+			messageOutput += "\nAlternatively, this might mean that you want to do SSL but are not using SSL within your C2 Profile container.\n"
+			messageOutput += "To add SSL to your C2 profile:\n"
+			messageOutput += "\t1. Go to the C2 Profile page\n"
+			messageOutput += "\t2. Click configure for the http profile\n"
+			messageOutput += fmt.Sprintf(
+				"\t3. Change 'use_ssl' to 'true' and make sure the port is %d\n",
+				parameterPort)
+			messageOutput += "\t4. Click to stop the profile and then start it again\n"
+		}
+		response.Message = messageOutput
+		return response
 	},
 	GetRedirectorRulesFunction: func(message c2structs.C2GetRedirectorRuleMessage) c2structs.C2GetRedirectorRuleMessageResponse {
 		response := c2structs.C2GetRedirectorRuleMessageResponse{
@@ -190,23 +195,24 @@ var httpc2definition = c2structs.C2Profile{
 		// Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 		urisString := strings.Join(uris, ".*|") + ".*"
 		c2RewriteOutput := []string{}
-		if currentConfig, err := getC2JsonConfig(); err != nil {
+		currentConfig, err := getC2JsonConfig()
+		if err != nil {
 			logging.LogError(err, "Failed to get current json configuration")
 			response.Error = "Failed to get current json configuration"
 			response.Success = false
 			return response
-		} else {
-			c2RewriteTemplate := "RewriteRule ^.*$ \"%s%%{REQUEST_URI}\" [P,L]"
-			for _, instance := range currentConfig.Instances {
-				if instance.UseSSL {
-					serverURL := fmt.Sprintf("https://C2_SERVER_HERE:%d", instance.Port)
-					c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
-				} else {
-					serverURL := fmt.Sprintf("http://C2_SERVER_HERE:%d", instance.Port)
-					c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
-				}
+		}
+		c2RewriteTemplate := "RewriteRule ^.*$ \"%s%%{REQUEST_URI}\" [P,L]"
+		for _, instance := range currentConfig.Instances {
+			if instance.UseSSL {
+				serverURL := fmt.Sprintf("https://C2_SERVER_HERE:%d", instance.Port)
+				c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
+			} else {
+				serverURL := fmt.Sprintf("http://C2_SERVER_HERE:%d", instance.Port)
+				c2RewriteOutput = append(c2RewriteOutput, fmt.Sprintf(c2RewriteTemplate, serverURL))
 			}
 		}
+
 		output += "#\tReplace 'C2_SERVER_HERE' with the IP/Domain address of where matching traffic should go\n"
 
 		htaccessTemplate := `
@@ -246,23 +252,29 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			Success: true,
 			Message: fmt.Sprintf("Called opsec check:\n%v", message),
 		}
-		if callbackHost, ok := message.Parameters["callback_host"]; !ok {
+		callbackHost, ok := message.Parameters["callback_host"]
+		if !ok {
 			response.Success = false
 			response.Error = "Failed to get callback_host attribute"
 			return response
-		} else if callbackPort, ok := message.Parameters["callback_port"]; !ok {
+		}
+		callbackPort, ok := message.Parameters["callback_port"]
+		if !ok {
 			response.Success = false
 			response.Error = "Failed to get callback_port attribute"
 			return response
-		} else if callbackHost.(string) == "https://domain.com" {
+		}
+		if callbackHost.(string) == "https://domain.com" {
 			response.Success = false
 			response.Error = "Callback Host is set to default of https://domain.com!\n"
 			return response
-		} else if len(strings.Split(callbackHost.(string), ":")) != 2 {
+		}
+		if len(strings.Split(callbackHost.(string), ":")) != 2 {
 			response.Success = false
 			response.Error = fmt.Sprintf("callback host is improperly configured! %v shouldn't specify a port, that should be in the callback_port field", callbackHost)
 			return response
-		} else if strings.HasPrefix(callbackHost.(string), "https") {
+		}
+		if strings.HasPrefix(callbackHost.(string), "https") {
 			standardHttpsPorts := []int{443, 8443, 7443}
 			for _, port := range standardHttpsPorts {
 				if port == int(callbackPort.(float64)) {
@@ -272,10 +284,9 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			response.Success = true
 			response.Message = fmt.Sprintf("Callback port, %d, is unusual for https scheme", int(callbackPort.(float64)))
 			return response
-		} else {
-			response.Message = "No immediate issues with configuration"
-			return response
 		}
+		response.Message = "No immediate issues with configuration"
+		return response
 	},
 	GetIOCFunction: func(message c2structs.C2GetIOCMessage) c2structs.C2GetIOCMessageResponse {
 		response := c2structs.C2GetIOCMessageResponse{Success: true}
@@ -291,64 +302,35 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			response.Error = "Failed to get callback_port"
 			return response
 		}
-		getURI, err := message.GetStringArg("get_uri")
-		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get get_uri"
-			return response
-		}
 		postURI, err := message.GetStringArg("post_uri")
-		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get post_uri"
-			return response
+		if err == nil {
+			response.IOCs = append(response.IOCs, c2structs.IOC{
+				Type: "url",
+				IOC:  fmt.Sprintf("%s:%v/%s", callbackHost, callbackPort, postURI),
+			})
 		}
-		queryPathForGet, err := message.GetStringArg("query_path_name")
-		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get query_path_name"
-			return response
+		getURI, err := message.GetStringArg("get_uri")
+		if err == nil {
+			queryPathForGet, err := message.GetStringArg("query_path_name")
+			if err == nil {
+				response.IOCs = append(response.IOCs, c2structs.IOC{
+					Type: "url",
+					IOC:  fmt.Sprintf("%s:%v/%s?%s=", callbackHost, callbackPort, getURI, queryPathForGet),
+				})
+			}
 		}
-
 		response.IOCs = append(response.IOCs, c2structs.IOC{
 			Type: "url",
 			IOC:  fmt.Sprintf("%s:%v", callbackHost, callbackPort),
-		})
-		response.IOCs = append(response.IOCs, c2structs.IOC{
-			Type: "url",
-			IOC:  fmt.Sprintf("%s:%v/%s?%s=", callbackHost, callbackPort, getURI, queryPathForGet),
-		})
-		response.IOCs = append(response.IOCs, c2structs.IOC{
-			Type: "url",
-			IOC:  fmt.Sprintf("%s:%v/%s", callbackHost, callbackPort, postURI),
 		})
 		return response
 	},
 	SampleMessageFunction: func(message c2structs.C2SampleMessageMessage) c2structs.C2SampleMessageResponse {
 		response := c2structs.C2SampleMessageResponse{Success: true}
-		getURI, err := message.GetStringArg("get_uri")
-		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get get_uri"
-			return response
-		}
-		postURI, err := message.GetStringArg("post_uri")
-		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get post_uri"
-			return response
-		}
-		queryPathForGet, err := message.GetStringArg("query_path_name")
-		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get query_path_name"
-			return response
-		}
 		headers, err := message.GetDictionaryArg("headers")
 		if err != nil {
-			response.Success = false
-			response.Error = "Failed to get headers"
-			return response
+			logging.LogError(err, "failed to get dictionary headers")
+			headers = make(map[string]string)
 		}
 		callbackHost, err := message.GetStringArg("callback_host")
 		if err != nil {
@@ -375,8 +357,24 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 			sampleCURLGet += fmt.Sprintf("-H \"%s: %s\" ", key, value)
 			sampleCURLPost += fmt.Sprintf("-H \"%s: %s\" ", key, value)
 		}
-		sampleCURLGet += fmt.Sprintf("%s:%d/%s?%s=%s", callbackHost, int(callbackPort), getURI, queryPathForGet, base64URLEncoding)
-		sampleCURLPost += fmt.Sprintf("%s:%d/%s", callbackHost, int(callbackPort), postURI)
+		getURI, err := message.GetStringArg("get_uri")
+		if err == nil {
+			queryPathForGet, err := message.GetStringArg("query_path_name")
+			if err == nil {
+				sampleCURLGet += fmt.Sprintf("%s:%d/%s?%s=%s", callbackHost, int(callbackPort), getURI, queryPathForGet, base64URLEncoding)
+			} else {
+				sampleCURLGet = "Missing query_path_name"
+			}
+		} else {
+			sampleCURLGet = "Missing get_uri"
+		}
+
+		postURI, err := message.GetStringArg("post_uri")
+		if err == nil {
+			sampleCURLPost += fmt.Sprintf("%s:%d/%s", callbackHost, int(callbackPort), postURI)
+		} else {
+			sampleCURLPost = "Missing post_uri"
+		}
 		response.Message = fmt.Sprintf("GET:\n%s\n\nPOST:\n%s\n\n", sampleCURLGet, sampleCURLPost)
 		return response
 	},
@@ -550,12 +548,7 @@ var httpc2parameters = []c2structs.C2Parameter{
 }
 
 func Initialize() {
-	agentBytes, err := os.ReadFile(filepath.Join(".", "http.svg"))
-	if err != nil {
-		logging.LogError(err, "failed to get http svg icon")
-	} else {
-		httpc2definition.AgentIcon = &agentBytes
-	}
 	c2structs.AllC2Data.Get("http").AddC2Definition(httpc2definition)
+	c2structs.AllC2Data.Get("http").AddIcon(filepath.Join(".", "http.svg"))
 	c2structs.AllC2Data.Get("http").AddParameters(httpc2parameters)
 }
