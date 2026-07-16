@@ -16,6 +16,8 @@ github.com/MythicMeta/MythicContainer v1.5.0 h1:KA9GxgPwBiQ60jGo00Km6B1MQjvlJM59
 github.com/MythicMeta/MythicContainer v1.5.0/go.mod h1:st3wSmozT/3a4Q19R6JIOkHKWxwXW6RcGcyaDuxkRGQ=
 github.com/MythicMeta/MythicContainer v1.5.1 h1:IWvGiM6kWmDuWjhXrF+rG2Bj1xRjWJVsgA/87mqTRUc=
 github.com/MythicMeta/MythicContainer v1.5.1/go.mod h1:st3wSmozT/3a4Q19R6JIOkHKWxwXW6RcGcyaDuxkRGQ=
+github.com/MythicMeta/MythicContainer v1.7.0-rc2 h1:ZDwPYSHI1IXKPctzv70E8fV2GT/mp7vaG6S37cPDov8=
+github.com/MythicMeta/MythicContainer v1.7.0-rc2/go.mod h1:bHB40wZf9txJKNc2x5H5g+3CJ2NCJlT9t5zCZBbVXYE=
 github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

@@ -1,6 +1,7 @@
 package c2functions
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,10 @@ import (
 type config struct {
 	Instances []instanceConfig `json:"instances"`
 }
+type hostedFile struct {
+	AgentFileID   string `json:"agent_file_id"`
+	DownloadToken string `json:"download_token"`
+}
 type instanceConfig struct {
 	Port             int                    `json:"port"`
 	KeyPath          string                 `json:"key_path"`
@@ -25,7 +30,7 @@ type instanceConfig struct {
 	ServerHeaders    map[string]interface{} `json:"ServerHeaders"`
 	ErrorFilePath    string                 `json:"error_file_path"`
 	ErrorStatusCode  int                    `json:"error_status_code"`
-	PayloadHostPaths map[string]string      `json:"payloads"`
+	PayloadHostPaths map[string]hostedFile  `json:"payloads"`
 }
 
 func getC2JsonConfig() (*config, error) {
@@ -52,7 +57,7 @@ func writeC2JsonConfig(cfg *config) error {
 	return os.WriteFile(filepath.Join(".", "http", "c2_code", "config.json"), jsonBytes, 644)
 }
 
-const version = "1.1.1"
+const version = "2.0.0"
 
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",
@@ -62,23 +67,22 @@ var httpc2definition = c2structs.C2Profile{
 	IsServerRouted:   true,
 	SemVer:           version,
 	ServerBinaryPath: filepath.Join(".", "http", "c2_code", "mythic_http_server"),
-	ConfigCheckFunction: func(message c2structs.C2ConfigCheckMessage) c2structs.C2ConfigCheckMessageResponse {
+	ConfigCheckFunction: func(ctx context.Context, message c2structs.C2ConfigCheckMessage) c2structs.C2ConfigCheckMessageResponse {
 		response := c2structs.C2ConfigCheckMessageResponse{
 			Success: true,
 			Message: fmt.Sprintf("Called config check\n%v", message),
 		}
-		suppliedPort, ok := message.Parameters["callback_port"]
-		if !ok {
-			response.Success = false
-			response.Error = "Failed to get callback_port attribute"
-			return response
-		}
-		suppliedHost, ok := message.Parameters["callback_host"]
-		if !ok {
+		suppliedHost, err := message.GetStringArg("callback_host")
+		if err != nil {
 			response.Success = false
 			response.Error = "Failed to get callback_host attribute"
 			return response
 		}
+		suppliedPort, err := message.GetNumberArg("callback_port")
+		if err != nil {
+			// get port based on suppliedHost
+		}
+
 		currentConfig, err := getC2JsonConfig()
 		if err != nil {
 			response.Success = false
@@ -87,8 +91,8 @@ var httpc2definition = c2structs.C2Profile{
 		}
 		possibleSSLPorts := []int{}
 		possiblePorts := []int{}
-		parameterPort := int(suppliedPort.(float64))
-		parameterHost := suppliedHost.(string)
+		parameterPort := int(suppliedPort)
+		parameterHost := suppliedHost
 		for _, instance := range currentConfig.Instances {
 			if instance.UseSSL {
 				possibleSSLPorts = append(possibleSSLPorts, instance.Port)
@@ -160,7 +164,7 @@ var httpc2definition = c2structs.C2Profile{
 		response.Message = messageOutput
 		return response
 	},
-	GetRedirectorRulesFunction: func(message c2structs.C2GetRedirectorRuleMessage) c2structs.C2GetRedirectorRuleMessageResponse {
+	GetRedirectorRulesFunction: func(ctx context.Context, message c2structs.C2GetRedirectorRuleMessage) c2structs.C2GetRedirectorRuleMessageResponse {
 		response := c2structs.C2GetRedirectorRuleMessageResponse{
 			Success: true,
 			Message: fmt.Sprintf("Called redirector status check:\n%v", message),
@@ -247,7 +251,7 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 		response.Message = output
 		return response
 	},
-	OPSECCheckFunction: func(message c2structs.C2OPSECMessage) c2structs.C2OPSECMessageResponse {
+	OPSECCheckFunction: func(ctx context.Context, message c2structs.C2OPSECMessage) c2structs.C2OPSECMessageResponse {
 		response := c2structs.C2OPSECMessageResponse{
 			Success: true,
 			Message: fmt.Sprintf("Called opsec check:\n%v", message),
@@ -288,7 +292,7 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 		response.Message = "No immediate issues with configuration"
 		return response
 	},
-	GetIOCFunction: func(message c2structs.C2GetIOCMessage) c2structs.C2GetIOCMessageResponse {
+	GetIOCFunction: func(ctx context.Context, message c2structs.C2GetIOCMessage) c2structs.C2GetIOCMessageResponse {
 		response := c2structs.C2GetIOCMessageResponse{Success: true}
 		callbackHost, err := message.GetStringArg("callback_host")
 		if err != nil {
@@ -325,7 +329,7 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 		})
 		return response
 	},
-	SampleMessageFunction: func(message c2structs.C2SampleMessageMessage) c2structs.C2SampleMessageResponse {
+	SampleMessageFunction: func(ctx context.Context, message c2structs.C2SampleMessageMessage) c2structs.C2SampleMessageResponse {
 		response := c2structs.C2SampleMessageResponse{Success: true}
 		headers, err := message.GetDictionaryArg("headers")
 		if err != nil {
@@ -378,40 +382,51 @@ RewriteCond %%{HTTP_USER_AGENT} "%s"`
 		response.Message = fmt.Sprintf("GET:\n%s\n\nPOST:\n%s\n\n", sampleCURLGet, sampleCURLPost)
 		return response
 	},
-	HostFileFunction: func(message c2structs.C2HostFileMessage) c2structs.C2HostFileMessageResponse {
-		config, err := getC2JsonConfig()
+	HostFileFunction: func(ctx context.Context, message c2structs.C2HostFilesMessage) c2structs.C2HostFilesMessageResponse {
+		response := c2structs.C2HostFilesMessageResponse{
+			Success: true,
+			Results: make([]c2structs.C2HostFileMessageResponse, 0, len(message.Files)),
+		}
+		c2Config, err := getC2JsonConfig()
 		if err != nil {
-			return c2structs.C2HostFileMessageResponse{
+			return c2structs.C2HostFilesMessageResponse{
 				Success: false,
 				Error:   err.Error(),
 			}
 		}
-		for i, _ := range config.Instances {
-			if config.Instances[i].PayloadHostPaths == nil {
-				config.Instances[i].PayloadHostPaths = make(map[string]string)
+		for _, file := range message.Files {
+			fileResponse := c2structs.C2HostFileMessageResponse{
+				AgentFileID: file.AgentFileID,
+				HostURL:     file.HostURL,
+				Success:     true,
 			}
-			if message.Remove {
-				for j, _ := range config.Instances[i].PayloadHostPaths {
-					if config.Instances[i].PayloadHostPaths[j] == message.FileUUID {
-						delete(config.Instances[i].PayloadHostPaths, j)
+			for i := range c2Config.Instances {
+				if c2Config.Instances[i].PayloadHostPaths == nil {
+					c2Config.Instances[i].PayloadHostPaths = make(map[string]hostedFile)
+				}
+				if file.Remove {
+					delete(c2Config.Instances[i].PayloadHostPaths, file.HostURL)
+				} else {
+					c2Config.Instances[i].PayloadHostPaths[file.HostURL] = hostedFile{
+						AgentFileID:   file.AgentFileID,
+						DownloadToken: file.DownloadToken,
 					}
 				}
-			} else {
-				config.Instances[i].PayloadHostPaths[message.HostURL] = message.FileUUID
 			}
-
+			response.Results = append(response.Results, fileResponse)
 		}
-		err = writeC2JsonConfig(config)
+		err = writeC2JsonConfig(c2Config)
 		if err != nil {
-			return c2structs.C2HostFileMessageResponse{
-				Success: false,
-				Error:   err.Error(),
+			response.Success = false
+			response.Error = err.Error()
+			for i := range response.Results {
+				response.Results[i].Success = false
+				response.Results[i].Error = err.Error()
 			}
+			return response
 		}
-		return c2structs.C2HostFileMessageResponse{
-			Success:               true,
-			RestartInternalServer: true,
-		}
+		response.RestartInternalServer = true
+		return response
 	},
 }
 var httpc2parameters = []c2structs.C2Parameter{
