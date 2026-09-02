@@ -57,7 +57,7 @@ func writeC2JsonConfig(cfg *config) error {
 	return os.WriteFile(filepath.Join(".", "http", "c2_code", "config.json"), jsonBytes, 644)
 }
 
-const version = "2.0.1"
+const version = "2.0.2"
 
 var httpc2definition = c2structs.C2Profile{
 	Name:             "http",

@@ -188,17 +188,19 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 	existingPaths := []string{"/", ""}
 	if len(configInstance.PayloadHostPaths) > 0 {
 		for path, value := range configInstance.PayloadHostPaths {
-			localVal := value
+			localID := value.AgentFileID
+			localToken := value.DownloadToken
 			directorForFiles := func(req *http.Request) {
 				req.Header.Add("mythic", "http")
 				req.Header.Add("X-forwarded-user-agent", req.Header.Get("User-Agent"))
 				req.Header.Add("x-forwarded-url", req.URL.RequestURI())
 				req.Header.Add("x-forwarded-for", req.RemoteAddr)
 				req.Header.Add("x-forwarded-host", req.Host)
+				req.Header.Add("Authorization", "Bearer: "+localToken)
 				req.URL.Scheme = "http"
 				req.URL.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
 				req.Host = fmt.Sprintf("%s:%d", mythicConfig.MythicConfig.MythicServerHost, mythicConfig.MythicConfig.MythicServerPort)
-				req.URL.Path = fmt.Sprintf("/direct/download/%s", localVal)
+				req.URL.Path = fmt.Sprintf("/direct/download/%s", localID)
 			}
 			proxyForFiles := httputil.ReverseProxy{
 				Director:       directorForFiles,
@@ -211,11 +213,11 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}}
 			if slices.Contains(existingPaths, path) {
-				logging.LogError(nil, "Trying to host on path twice", "path", path, "file", localVal)
+				logging.LogError(nil, "Trying to host on path twice", "path", path, "file", localID)
 				continue
 			}
 			existingPaths = append(existingPaths, path)
-			r.GET(path, generateServeFile(configInstance, fmt.Sprintf("%s", localVal), &proxyForFiles))
+			r.GET(path, generateServeFile(configInstance, fmt.Sprintf("%s", localID), &proxyForFiles))
 		}
 	}
 }
