@@ -2,26 +2,31 @@ package webserver
 
 import (
 	"encoding/json"
-	"github.com/MythicMeta/MythicContainer/logging"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/MythicMeta/MythicContainer/logging"
 )
 
 type config struct {
 	Instances []instanceConfig `json:"instances"`
 }
+type hostedFile struct {
+	AgentFileID   string `json:"agent_file_id"`
+	DownloadToken string `json:"download_token"`
+}
 type instanceConfig struct {
-	Port             int               `json:"port"`
-	KeyPath          string            `json:"key_path"`
-	CertPath         string            `json:"cert_path"`
-	Debug            bool              `json:"debug"`
-	UseSSL           bool              `json:"use_ssl"`
-	Headers          map[string]string `json:"ServerHeaders"`
-	PayloadHostPaths map[string]string `json:"payloads"`
-	BindIP           string            `json:"bind_ip"`
-	ErrorFilePath    string            `json:"error_file_path"`
-	ErrorStatusCode  int               `json:"error_status_code"`
+	Port             int                   `json:"port"`
+	KeyPath          string                `json:"key_path"`
+	CertPath         string                `json:"cert_path"`
+	Debug            bool                  `json:"debug"`
+	UseSSL           bool                  `json:"use_ssl"`
+	Headers          map[string]string     `json:"ServerHeaders"`
+	PayloadHostPaths map[string]hostedFile `json:"payloads"`
+	BindIP           string                `json:"bind_ip"`
+	ErrorFilePath    string                `json:"error_file_path"`
+	ErrorStatusCode  int                   `json:"error_status_code"`
 }
 
 var (
